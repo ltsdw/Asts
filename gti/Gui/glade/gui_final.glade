@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.36.0 -->
+<interface>
+  <requires lib="gtk+" version="3.22"/>
+  <object class="GtkImage" id="delim">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-delete</property>
+  </object>
+  <object class="GtkImage" id="delim1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-delete</property>
+  </object>
+  <object class="GtkImage" id="delim2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-delete</property>
+  </object>
+  <object class="GtkImage" id="delim3">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-delete</property>
+  </object>
+  <object class="GtkWindow" id="main">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">sub2anki</property>
+    <property name="resizable">False</property>
+    <property name="window_position">center</property>
+    <property name="default_width">1000</property>
+    <property name="default_height">500</property>
+    <property name="icon_name">image-x-generic</property>
+    <property name="gravity">center</property>
+    <signal name="destroy" handler="on_main_destroy" swapped="no"/>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
+                <property name="label" translatable="yes">Srt File With Translation (Optional):</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFileChooserButton" id="video_srt_file_optional">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Select a Srt File With Translation (Optional)</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="title" translatable="yes"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
+                <property name="label" translatable="yes">Srt File With The Target Language (Required):</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFileChooserButton" id="video_srt_file">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Select a Srt File (Required)</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="title" translatable="yes"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
+                <property name="label" translatable="yes">Video (Required):</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFileChooserButton" id="video_file">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Select a Video File (Required)</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="hexpand">True</property>
+                <property name="title" translatable="yes"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
+                <property name="margin_top">10</property>
+                <property name="label" translatable="yes">collection.anki2 File (Required):</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFileChooserButton" id="collection_file">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Select 'collection.anki2' File (Generally in ~/.local/share/Anki2/&lt;user&gt; on Unix-Like Operating Systems)</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="hexpand">True</property>
+                <property name="title" translatable="yes"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="dellsrtopt">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Remove selection</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="image">delim</property>
+                <property name="image_position">right</property>
+                <property name="always_show_image">True</property>
+                <signal name="clicked" handler="on_dellsrtopt_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="dellsrt">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Remove selection</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="image">delim1</property>
+                <property name="image_position">right</property>
+                <property name="always_show_image">True</property>
+                <signal name="clicked" handler="on_dellsrt_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="dellvid">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Remove selection</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="image">delim2</property>
+                <property name="image_position">right</property>
+                <property name="always_show_image">True</property>
+                <signal name="clicked" handler="on_dellvid_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="dellcoll">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Remove selection</property>
+                <property name="halign">end</property>
+                <property name="valign">center</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="image">delim3</property>
+                <property name="image_position">right</property>
+                <property name="always_show_image">True</property>
+                <signal name="clicked" handler="on_dellcoll_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">center</property>
+                <property name="margin_right">10</property>
+                <property name="margin_start">10</property>
+                <property name="margin_end">10</property>
+                <property name="label" translatable="yes">Deck Name:</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="deck_name_entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="margin_start">5</property>
+                <property name="margin_end">5</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <property name="placeholder_text" translatable="yes">Deck Name...</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <child>
+              <object class="GtkButton" id="cancel_action">
+                <property name="label" translatable="yes">  Cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Cancel and Quit</property>
+                <property name="halign">center</property>
+                <property name="valign">start</property>
+                <property name="margin_end">30</property>
+                <property name="margin_top">320</property>
+                <property name="margin_bottom">10</property>
+                <property name="hexpand">False</property>
+                <signal name="clicked" handler="on_cancel_action_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="proceed_action">
+                <property name="label" translatable="yes">Proceed</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Proceed</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="margin_start">30</property>
+                <property name="margin_top">320</property>
+                <property name="margin_bottom">10</property>
+                <signal name="clicked" handler="on_proceed_action_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+  </object>
+  <object class="GtkWindow" id="second_window">
+    <property name="can_focus">False</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="window_position">center</property>
+    <property name="default_width">1000</property>
+    <property name="default_height">700</property>
+    <property name="destroy_with_parent">True</property>
+    <property name="type_hint">dialog</property>
+    <property name="gravity">center</property>
+    <child>
+      <object class="GtkGrid">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <child>
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="margin_start">5</property>
+            <property name="margin_end">5</property>
+            <property name="margin_top">5</property>
+            <property name="margin_bottom">5</property>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTreeView" id="sub_tree_view">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="search_column">1</property>
+                    <property name="enable_grid_lines">both</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection"/>
+                    </child>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkGrid">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">end</property>
+                <property name="margin_start">20</property>
+                <property name="margin_end">20</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <child>
+                  <object class="GtkCheckButton" id="select_all_video_checkbutton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="focus_on_click">False</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
+                    <property name="margin_top">5</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="inconsistent">True</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="on_select_all_video_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Select All:</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">0</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">10</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="label" translatable="yes">Video</property>
+                    <property name="justify">center</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">5</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="label" translatable="yes">Audio</property>
+                    <property name="justify">center</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="select_all_audio_checkbutton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="focus_on_click">False</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
+                    <property name="margin_top">5</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="inconsistent">True</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="on_select_all_audio_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkGrid">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">center</property>
+            <property name="vexpand">False</property>
+            <property name="column_homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="cancel_process">
+                <property name="label" translatable="yes">Cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_left">50</property>
+                <property name="margin_right">55</property>
+                <property name="margin_start">50</property>
+                <property name="margin_end">55</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <signal name="clicked" handler="on_cancel_process_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="conclude_process">
+                <property name="label" translatable="yes">Proceed</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_left">50</property>
+                <property name="margin_right">50</property>
+                <property name="margin_start">50</property>
+                <property name="margin_end">50</property>
+                <property name="margin_top">5</property>
+                <property name="margin_bottom">5</property>
+                <signal name="clicked" handler="on_conclude_process_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="margin_left">5</property>
+            <property name="margin_right">5</property>
+            <property name="margin_start">5</property>
+            <property name="margin_end">5</property>
+            <property name="margin_top">5</property>
+            <property name="margin_bottom">5</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">5</property>
+            <property name="homogeneous">True</property>
+            <property name="baseline_position">top</property>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">end</property>
+                <property name="label" translatable="yes">Front:</property>
+                <attributes>
+                  <attribute name="style" value="italic"/>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTextView" id="text_view_front">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="halign">start</property>
+                <property name="valign">end</property>
+                <property name="label" translatable="yes">Back:</property>
+                <attributes>
+                  <attribute name="style" value="italic"/>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkTextView" id="text_view_back">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                  </object>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkProgressBar" id="progress_bar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="margin_start">30</property>
+            <property name="margin_end">30</property>
+            <property name="margin_top">10</property>
+            <property name="margin_bottom">10</property>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
+    </child>
+  </object>
+</interface>
