@@ -2,7 +2,6 @@
 
 from os import environ, mkdir, path, remove, system
 from glob import glob
-from operator import itemgetter
 from anki import Collection as aopen
 from pysrt import open as popen
 

@@ -367,6 +367,8 @@
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <property name="gravity">center</property>
+    <signal name="destroy" handler="on_second_window_destroy" swapped="no"/>
+    <signal name="destroy-event" handler="on_second_window_destroy_event" swapped="no"/>
     <child>
       <object class="GtkGrid">
         <property name="visible">True</property>

@@ -2,10 +2,10 @@
 
 from gi import require_version
 require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, Pango
+from gi.repository import Gtk, Gdk, GLib
 from os import path, system
 from anki import Collection as aopen
-import threading
+from threading import Thread
 
 from ..Funcs import (
         checkIfIsCollection,
@@ -26,19 +26,19 @@ glade_file = path.join((path.abspath('gti/Gui/glade')) + '/' + 'gui_final.glade'
 builder = Gtk.Builder()
 builder.add_from_file(glade_file)
 
-class MyThread(threading.Thread):
-    def __init__(self, cllbck, s_list_store, v_filename, s_list_store_back, c_filename, d_name, t_of_medias, t_of_sentences):
-        threading.Thread.__init__(self)
+class MyThread(Thread):
+    def __init__(self, on_conclude_process_clicked, sub_list_store, vid_filename, sub_list_store_back, coll_filename, deck_name, tuple_of_medias, tuple_of_sentences):
+        Thread.__init__(self)
 
-        self.callback               = cllbck
+        self.callback               = on_conclude_process_clicked
 
-        self.sub_list_store         = s_list_store
-        self.vid_filename           = v_filename
-        self.sub_list_store_back    = s_list_store_back
-        self.coll_filename          = c_filename
-        self.deck_name              = d_name
-        self.tuple_of_medias        = t_of_medias
-        self.tuple_of_sentences     = t_of_sentences
+        self.sub_list_store         = sub_list_store
+        self.vid_filename           = vid_filename
+        self.sub_list_store_back    = sub_list_store_back
+        self.coll_filename          = coll_filename
+        self.deck_name              = deck_name
+        self.tuple_of_medias        = tuple_of_medias
+        self.tuple_of_sentences     = tuple_of_sentences
 
     #Normally this functions shouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
@@ -60,6 +60,8 @@ class MyThread(threading.Thread):
 
         for arg in tuple_of_sentences:
             (sentence_front, sentence_back, media)  = arg
+            sentence_front  = sentence_front.replace('\n', '<br>')
+            sentence_back   = sentence_back.replace('\n', '<br>')
             card                                    = deck.newNote()
             fname                                   = deck.media.addFile(cache_dir + '/' + media)
             card['Front']                           = sentence_front + f'[sound:{fname}]'
@@ -176,6 +178,15 @@ class Handler(object):
     def on_cancel_process_clicked(self, *args):
         self.second_window_hided = True
         self.second_window.hide()
+        progress_bar = builder.get_object('progress_bar')
+        progress_bar.set_fraction(0)
+        progress_bar.set_show_text(False)
+
+    def on_second_window_destroy_event(self, *args):
+        self.on_cancel_process_clicked()
+
+    def on_second_window_destroy(self, *args):
+        self.on_cancel_process_clicked()
 
     def on_proceed_action_clicked(self, *args):
         if not self.second_window_hided:
@@ -249,7 +260,7 @@ class Handler(object):
     def editing_card(self, text_buffer):
         path = self.selected_row.get_selected_rows()[1][0]
         self.sub_list_store[path][1] = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
-    
+
     def editing_card_back(self, text_buffer):
         path = self.selected_row.get_selected_rows()[1][0]
         self.sub_list_store_back[path][1] = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
