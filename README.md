@@ -31,7 +31,7 @@ python run.py
 
 
 
-3. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible add new cards while anki still opened**)
+3. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened**)
 ![Screenshot-29-08-2020_16-02-56](https://user-images.githubusercontent.com/44977415/91644315-3f908180-ea11-11ea-8597-f2281d7f5f95.png)
 
 
