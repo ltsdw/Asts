@@ -1,5 +1,5 @@
 # Asts
-Asts (Another subs to srs) is a more simple project used to create cards with [Anki](http://ankisrs.net).
+Asts (Another subs to srs) is a simple tool used to create cards to [Anki](http://ankisrs.net). It doesn't work on Windows yet.
 
 # Dependencies
 
@@ -32,9 +32,17 @@ python run.py
 
 
 3. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible add new cards while anki still opened**)
-![Screenshot-29-08-2020_15-10-15](https://user-images.githubusercontent.com/44977415/91643628-7794c600-ea0b-11ea-992a-f65ebbbe61e6.png)
+![Screenshot-29-08-2020_16-02-56](https://user-images.githubusercontent.com/44977415/91644315-3f908180-ea11-11ea-8597-f2281d7f5f95.png)
 
 
 ## Anki Card Example (Front & Back)
 
-![Screenshot-29-08-2020_15-11-27](https://user-images.githubusercontent.com/44977415/91643684-d4907c00-ea0b-11ea-85c5-87c99dc1de12.png)
+![Screenshot-29-08-2020_16-03-24](https://user-images.githubusercontent.com/44977415/91644321-4cad7080-ea11-11ea-81a0-a0a783604876.png)
+
+## Related Projects
+
+Projects similar to [subs2srs](http://subs2srs.sourceforge.net/):
+
+* [SubtitleMemorize](https://github.com/ChangSpivey/SubtitleMemorize)
+* [substudy](https://github.com/emk/substudy)
+* [movies2anki](https://github.com/kelciour/movies2anki)
