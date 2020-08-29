@@ -8,12 +8,12 @@ Asts (Another subs to srs) is a simple tool used to create cards to [Anki](http:
 pip install pysrt
 ```
 
-* Ffmpeg
+* Ffmpeg:
 ```
 sudo pacman -S ffmpeg
 ```
 
-* GTK3, PyGobject ([Only needed on Arch Linux](https://wiki.archlinux.org/index.php/GTK/Development#Python))
+* GTK3, PyGobject ([Only needed on Arch Linux](https://wiki.archlinux.org/index.php/GTK/Development#Python)):
 ```
 sudo pacman -S gtk3 python-gobject
 ```
