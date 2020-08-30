@@ -347,7 +347,7 @@ close it before trying again!</property>
                 <property name="margin_right">10</property>
                 <property name="margin_start">10</property>
                 <property name="margin_end">10</property>
-                <property name="label" translatable="yes">Deck Name:</property>
+                <property name="label" translatable="yes">Deck Name (Required):</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
