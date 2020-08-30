@@ -6,6 +6,7 @@ from gi.repository import Gtk, Gdk, GLib
 from os import path, system
 from anki import Collection as aopen
 from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 
 from ..Funcs import (
         checkIfIsCollection,
@@ -27,58 +28,79 @@ builder = Gtk.Builder()
 builder.add_from_file(glade_file)
 
 class MyThread(Thread):
-    def __init__(self, on_conclude_process_clicked, sub_list_store, vid_filename, sub_list_store_back, coll_filename, deck_name, tuple_of_medias, tuple_of_sentences):
+    def __init__(
+            self, updateProgress,
+            sub_list_store, vid_filename,
+            sub_list_store_back,
+            coll_filename, deck_name,
+            tuple_of_medias,
+            tuple_of_sentences,
+            callDialogAnki):
+
         Thread.__init__(self)
 
-        self.callback               = on_conclude_process_clicked
+        self.callback                   = updateProgress
 
-        self.sub_list_store         = sub_list_store
-        self.vid_filename           = vid_filename
-        self.sub_list_store_back    = sub_list_store_back
-        self.coll_filename          = coll_filename
-        self.deck_name              = deck_name
-        self.tuple_of_medias        = tuple_of_medias
-        self.tuple_of_sentences     = tuple_of_sentences
+        self.sub_list_store             = sub_list_store
+        self.vid_filename               = vid_filename
+        self.sub_list_store_back        = sub_list_store_back
+        self.coll_filename              = coll_filename
+        self.deck_name                  = deck_name
+        self.tuple_of_medias            = tuple_of_medias
+        self.tuple_of_sentences         = tuple_of_sentences
+
+        self.callDialogAnki           = callDialogAnki
 
     #Normally this functions wouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
         for media in tuple_of_medias:
-            cut(vid_filename, media)
-
+            with ThreadPoolExecutor() as executor:
+                executor.submit(cut, vid_filename, media)
             GLib.idle_add(self.callback)
+
+
+    def writeCards(self, tuple_of_sentence, deck):
+        (sentence_front, sentence_back, media)  = tuple_of_sentence
+
+        sentence_front  = sentence_front.replace('\n', '<br>')
+        sentence_back   = sentence_back.replace('\n', '<br>')
+        card                                    = self.deck.newNote()
+        fname                                   = self.deck.media.addFile(self.cache_dir + '/' + media)
+        card['Front']                           = sentence_front + f'[sound:{fname}]'
+        card['Back']                            = sentence_back
+        self.deck.addNote( card )
+        self.deck.save()
 
     def makeCards(self, coll_filename, deck_name, tuple_of_sentences):
         card_type = 'Basic'
-        cache_dir = path.abspath('data/cache/media')
-        deck = aopen( coll_filename );
-        deck_id = deck.decks.id(deck_name)
-        deck.decks.select( deck_id )
-        model = deck.models.byName( card_type )
+        self.cache_dir = path.abspath('data/cache/media')
+        self.deck = aopen( coll_filename )
+        deck_id = self.deck.decks.id( deck_name )
+        self.deck.decks.select( deck_id )
+        model = self.deck.models.byName( card_type )
         model['did'] = deck_id
-        deck.models.save( model )
-        deck.models.setCurrent( model )
+        self.deck.models.save( model )
+        self.deck.models.setCurrent( model )
 
-        for arg in tuple_of_sentences:
-            (sentence_front, sentence_back, media)  = arg
-            sentence_front  = sentence_front.replace('\n', '<br>')
-            sentence_back   = sentence_back.replace('\n', '<br>')
-            card                                    = deck.newNote()
-            fname                                   = deck.media.addFile(cache_dir + '/' + media)
-            card['Front']                           = sentence_front + f'[sound:{fname}]'
-            card['Back']                            = sentence_back
-            deck.addNote( card )
-            deck.save()
-
+        for tuple_of_sentence in tuple_of_sentences:
+            with ThreadPoolExecutor() as executor:
+                executor.submit(self.writeCards, tuple_of_sentence, self.deck)
             GLib.idle_add(self.callback)
 
-        deck.close()
+        self.deck.close()
 
     def run(self):
         clearCachedFiles()
-        self.cutMedias(self.vid_filename, self.tuple_of_medias)
-        self.makeCards(self.coll_filename, self.deck_name, self.tuple_of_sentences)
-        clearCachedFiles() 
 
+        self.cutMedias(self.vid_filename, self.tuple_of_medias)
+
+        #This will call a function that will draw a dialog window case anki is already opened
+        try:
+            self.makeCards(self.coll_filename, self.deck_name, self.tuple_of_sentences)
+        except:
+            GLib.idle_add(self.callDialogAnki)
+
+        clearCachedFiles()
 
 class Handler(object):
 
@@ -345,18 +367,19 @@ class Handler(object):
 
         self.tupleMedias(self.sub_list_store, self.sub_list_store_back)
         thread = MyThread(
-                self.update_progress,
+                self.updateProgress,
                 self.sub_list_store,
                 self.vid_filename,
                 self.sub_list_store_back,
                 self.coll_filename,
                 self.deck_name,
                 self.tuple_of_medias,
-                self.tuple_of_sentences)
+                self.tuple_of_sentences,
+                self.callDialogAnki)
 
         thread.start()
-    
-    def update_progress(self):
+ 
+    def updateProgress(self):
         self.current    = self.current + 1
         maximum         = (len(self.tuple_of_medias) + len(self.tuple_of_sentences))
         progress_bar    = builder.get_object('progress_bar')
@@ -383,11 +406,32 @@ class Handler(object):
         progress_bar.set_fraction(0)
         progress_bar.set_show_text(False)
 
+        self.current = 0
+
     def on_second_window_destroy_event(self, *args):
         self.on_cancel_process_clicked()
 
     def on_second_window_destroy(self, *args):
         self.on_cancel_process_clicked()
+
+    def callDialogAnki(self, *args):
+        clearCachedFiles()
+        progress_bar                    = builder.get_object('progress_bar') 
+        anki_open_window                = builder.get_object('anki_open_window')
+        self.conclude_process_button    = builder.get_object('conclude_process')
+
+        self.conclude_process_button.set_sensitive(False)
+        progress_bar.set_show_text(False)
+        progress_bar.set_fraction(0)
+        anki_open_window.show_all()
+
+
+        self.current = 0
+
+    def on_ok_anki_open_clicked(self, *args):
+        anki_open_window = builder.get_object('anki_open_window')
+        self.conclude_process_button.set_sensitive(True)
+        anki_open_window.hide()
 
     def on_main_destroy(self, *args):
         Gtk.main_quit()
