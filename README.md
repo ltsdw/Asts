@@ -1,5 +1,5 @@
 # Asts
-Asts (Another subs to srs) is a simple tool used to create cards to [Anki](http://ankisrs.net). It doesn't work on Windows yet.
+Asts (Another subs to srs) is a simple tool inspired by [subs2srs](http://subs2srs.sourceforge.net/) used to create [Anki](http://ankisrs.net) cards. It doesn't work on Windows yet.
 
 # Dependencies
 
