@@ -27,17 +27,16 @@ python run.py
 
 2. Select the files needed (**A deck will be created if there is no deck with the name specified**)
 
-![Screenshot-29-08-2020_15-09-10](https://user-images.githubusercontent.com/44977415/91643603-2dabe000-ea0b-11ea-8c12-36fd260aec48.png)
-
+![image](https://user-images.githubusercontent.com/44977415/91649743-67053f80-ea4d-11ea-96a4-010026ebaf37.png)
 
 
 3. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened**)
-![Screenshot-29-08-2020_16-02-56](https://user-images.githubusercontent.com/44977415/91644315-3f908180-ea11-11ea-8597-f2281d7f5f95.png)
+![image](https://user-images.githubusercontent.com/44977415/91649768-c7947c80-ea4d-11ea-8c1c-e40cf3f7384b.png)
 
 
 ## Anki Card Example (Front & Back)
 
-![Screenshot-29-08-2020_16-03-24](https://user-images.githubusercontent.com/44977415/91644321-4cad7080-ea11-11ea-81a0-a0a783604876.png)
+![image](https://user-images.githubusercontent.com/44977415/91649780-f3affd80-ea4d-11ea-8d9f-7c5bbb99928b.png)
 
 ## Related Projects
 
