@@ -1,0 +1,3 @@
+[submodule "pylib/pysrt"]
+	path = pylib/pysrt
+	url = https://github.com/byroot/pysrt.git
