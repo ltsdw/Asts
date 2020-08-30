@@ -1,8 +1,10 @@
 #! /bin/python
 
-from os import environ, mkdir, path, remove, system
+from os import environ, mkdir, path, remove, sys, system
 from glob import glob
 from anki import Collection as aopen
+
+sys.path.append(path.abspath('pylib/pysrt'))
 from pysrt import open as popen
 
 def createCacheDirIfItNotExists():

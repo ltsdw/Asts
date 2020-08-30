@@ -5,6 +5,7 @@ require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GLib
 from os import path, system
 from anki import Collection as aopen
+from anki.rsbackend import DBError
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
@@ -53,10 +54,10 @@ class MyThread(Thread):
 
     #Normally this functions wouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
-        for media in tuple_of_medias:
-            with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor() as executor:
+            for media in tuple_of_medias:
                 executor.submit(cut, vid_filename, media)
-            GLib.idle_add(self.callback)
+                GLib.idle_add(self.callback)
 
 
     def writeCards(self, tuple_of_sentence, deck):
@@ -82,10 +83,10 @@ class MyThread(Thread):
         self.deck.models.save( model )
         self.deck.models.setCurrent( model )
 
-        for tuple_of_sentence in tuple_of_sentences:
-            with ThreadPoolExecutor() as executor:
+        with ThreadPoolExecutor() as executor:
+            for tuple_of_sentence in tuple_of_sentences:
                 executor.submit(self.writeCards, tuple_of_sentence, self.deck)
-            GLib.idle_add(self.callback)
+                GLib.idle_add(self.callback)
 
         self.deck.close()
 
@@ -97,7 +98,7 @@ class MyThread(Thread):
         #This will call a function that will draw a dialog window case anki is already opened
         try:
             self.makeCards(self.coll_filename, self.deck_name, self.tuple_of_sentences)
-        except:
+        except DBError:
             GLib.idle_add(self.callDialogAnki)
 
         clearCachedFiles()
