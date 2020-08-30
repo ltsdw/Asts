@@ -3,11 +3,6 @@ Asts (Another subs to srs) is a simple tool inspired by [subs2srs](http://subs2s
 
 # Dependencies
 
-* [pysrt](https://pypi.org/project/pysrt/):
-```
-pip install pysrt
-```
-
 * Ffmpeg:
 ```
 sudo pacman -S ffmpeg
@@ -22,7 +17,7 @@ sudo pacman -S gtk3 python-gobject
 
 1. Clone this repository:
 ```
-git clone https://github.com/ltsdw/Asts.git
+git clone --recursive https://github.com/ltsdw/Asts.git
 ```
 
 2. Change directory:
@@ -45,6 +40,9 @@ python run.py
 ## Anki Card Example (Front & Back)
 
 ![image](https://user-images.githubusercontent.com/44977415/91649780-f3affd80-ea4d-11ea-8d9f-7c5bbb99928b.png)
+
+## Library
+* [pysrt](https://github.com/byroot/pysrt)
 
 ## Related Projects
 
