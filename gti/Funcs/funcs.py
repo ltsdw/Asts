@@ -1,5 +1,3 @@
-#! /bin/python
-
 from os import environ, mkdir, path, remove, sys, system
 from glob import glob
 from anki import Collection as aopen
