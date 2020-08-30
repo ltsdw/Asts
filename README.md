@@ -4,31 +4,31 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
 # Dependencies
 
 * Ffmpeg:
-```
-sudo pacman -S ffmpeg
-```
+    ```
+    sudo pacman -S ffmpeg
+    ```
 
 * GTK3, PyGobject ([Only needed on Arch Linux](https://wiki.archlinux.org/index.php/GTK/Development#Python)):
-```
-sudo pacman -S gtk3 python-gobject
-```
+    ```
+    sudo pacman -S gtk3 python-gobject
+    ```
 
 # Usage
 
 * 1 - Clone this repository:
-```
-git clone --recursive https://github.com/ltsdw/Asts.git
-```
+    ```
+    git clone --recursive https://github.com/ltsdw/Asts.git
+    ```
 
 * 2 - Change directory:
-```
-cd Asts
-```
+    ```
+    cd Asts
+    ```
 
 * 3 - Run the run.py
-```
-python run.py
-```
+    ```
+    python run.py
+    ```
 
 * 4 - Select the files needed<br>
     * **Obs:** A deck will be created if there is no deck with the name specified
