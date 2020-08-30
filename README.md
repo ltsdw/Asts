@@ -20,19 +20,27 @@ sudo pacman -S gtk3 python-gobject
 
 # Usage
 
-1. Run the run.py
+1. Clone this repository:
+```
+git clone https://github.com/ltsdw/Asts.git
+```
+
+2. Change directory:
+```
+cd Asts
+```
+
+3. Run the run.py
 ```
 python run.py
 ```
 
-2. Select the files needed (**A deck will be created if there is no deck with the name specified**)
+4. Select the files needed (**A deck will be created if there is no deck with the name specified**)
 
 ![image](https://user-images.githubusercontent.com/44977415/91649743-67053f80-ea4d-11ea-96a4-010026ebaf37.png)
 
-
-3. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened**)
+5. Select and edit the cards that you want add (**before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened**)
 ![image](https://user-images.githubusercontent.com/44977415/91649768-c7947c80-ea4d-11ea-8c1c-e40cf3f7384b.png)
-
 
 ## Anki Card Example (Front & Back)
 
