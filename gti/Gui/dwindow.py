@@ -339,7 +339,10 @@ class Handler(object):
                                                                             self.sub_list_store_back[i][1],
                                                                             f'{self.sub_list_store[i][0]}.mp3'),)
 
-    def on_conclude_process_clicked(self, *args): 
+    def on_conclude_process_clicked(self, *args):
+        self.conclude_process_button = builder.get_object('conclude_process')
+        self.conclude_process_button.set_sensitive(False)
+
         self.tupleMedias(self.sub_list_store, self.sub_list_store_back)
         thread = MyThread(
                 self.update_progress,
@@ -356,19 +359,24 @@ class Handler(object):
     def update_progress(self):
         self.current    = self.current + 1
         maximum         = (len(self.tuple_of_medias) + len(self.tuple_of_sentences))
-        progress_bar = builder.get_object('progress_bar')
+        progress_bar    = builder.get_object('progress_bar')
+        button          = builder.get_object('conclude_process')
         progress_bar.set_fraction(self.current / maximum)
 
         if self.current == maximum:
             progress_bar.set_text('Concluded!')
+            self.conclude_process_button.set_sensitive(True)
             progress_bar.set_show_text(True)
             self.current = 0
         else:
+            self.button.set_sensitive(False)
             progress_bar.set_show_text(False)
 
         return False
 
     def on_cancel_process_clicked(self, *args):
+        self.conclude_process_button.set_sensitive(True)
+
         self.second_window_hided = True
         self.second_window.hide()
         progress_bar = builder.get_object('progress_bar')
