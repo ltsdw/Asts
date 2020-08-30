@@ -185,7 +185,7 @@ class Handler(object):
             self.button.set_sensitive(False)
 
     def on_dellcoll_clicked(self, *args):
-       self.collection_file.unselect_all()
+        self.collection_file.unselect_all()
 
     def on_dellvid_clicked(self, *args):
         self.video_file.unselect_all()
