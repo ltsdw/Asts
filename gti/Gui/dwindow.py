@@ -40,7 +40,7 @@ class MyThread(Thread):
         self.tuple_of_medias        = tuple_of_medias
         self.tuple_of_sentences     = tuple_of_sentences
 
-    #Normally this functions shouldn't be here, but I need them to display a progress bar correctly
+    #Normally this functions wouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
         for media in tuple_of_medias:
             cut(vid_filename, media)
@@ -175,19 +175,6 @@ class Handler(object):
     def on_dellsrtopt_clicked(self, *args):
         self.video_srt_file_optional.unselect_all()
 
-    def on_cancel_process_clicked(self, *args):
-        self.second_window_hided = True
-        self.second_window.hide()
-        progress_bar = builder.get_object('progress_bar')
-        progress_bar.set_fraction(0)
-        progress_bar.set_show_text(False)
-
-    def on_second_window_destroy_event(self, *args):
-        self.on_cancel_process_clicked()
-
-    def on_second_window_destroy(self, *args):
-        self.on_cancel_process_clicked()
-
     def on_proceed_action_clicked(self, *args):
         if not self.second_window_hided:
 
@@ -197,9 +184,13 @@ class Handler(object):
             self.vid_srt_filename_opt   = self.video_srt_file_optional.get_filename()
             self.deck_name              = self.deck_name_entry.get_text()
 
-            self.open_srt_file      = openSrtFile(self.vid_srt_filename)
-            self.sub_tree_view      = builder.get_object('sub_tree_view')
-            self.sub_list_store     = Gtk.ListStore(int, str, str, str, bool, bool)
+            self.open_srt_file          = openSrtFile(self.vid_srt_filename)
+            self.sub_tree_view          = builder.get_object('sub_tree_view')
+            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
+
+            for i in range(len(self.open_srt_file)):
+                if subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])):
+                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])))
 
             if self.vid_srt_filename_opt:
                 self.open_srt_file_opt = openSrtFile(self.vid_srt_filename_opt)
@@ -211,16 +202,13 @@ class Handler(object):
                 for i in range(len(self.open_srt_file)):
                     self.sub_list_store_back.append((i, ''))
 
-            for i in range(len(self.open_srt_file)):
-                if subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])):
-                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])))
-            
             for i, title in enumerate(['Indice', 'Dialog', 'Start', 'End']):
                 renderer = Gtk.CellRendererText()
                 path_column = Gtk.TreeViewColumn(title=title, cell_renderer=renderer, text=i)
                 path_column.set_sort_column_id(i)
                 self.sub_tree_view.append_column(path_column)
-                self.sub_tree_view.set_model(self.sub_list_store)
+            
+            self.sub_tree_view.set_model(self.sub_list_store)
 
             self.selected_row = self.sub_tree_view.get_selection()
             self.selected_row.connect("changed", self.item_selected)
@@ -235,27 +223,67 @@ class Handler(object):
             column_toggle = Gtk.TreeViewColumn(title='Audio', cell_renderer=renderer_audio_toggle, active=5)
             self.sub_tree_view.append_column(column_toggle)
             renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
-        
-            self.sub_tree_view.connect('select-all', self.on_select_all_video_toggled)
+
+        else:
+            self.coll_filename          = self.collection_file.get_filename()
+            self.vid_filename           = self.video_file.get_filename()
+            self.vid_srt_filename       = self.video_srt_file.get_filename()
+            self.vid_srt_filename_opt   = self.video_srt_file_optional.get_filename()
+            self.deck_name              = self.deck_name_entry.get_text()
+
+            self.open_srt_file          = openSrtFile(self.vid_srt_filename)
+            self.sub_tree_view          = builder.get_object('sub_tree_view')
+            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
+
+            for i in range(len(self.open_srt_file)):
+                if subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])):
+                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])))
+
+            if self.vid_srt_filename_opt:
+                self.open_srt_file_opt = openSrtFile(self.vid_srt_filename_opt)
+                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool)
+                for i in range(len(self.open_srt_file)):
+                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file_opt[i])))
+            else:
+                self.sub_list_store_back = Gtk.ListStore(int, str)
+                for i in range(len(self.open_srt_file)):
+                    self.sub_list_store_back.append((i, ''))
+
+            self.sub_tree_view.set_model(self.sub_list_store)
+
+            self.selected_row = self.sub_tree_view.get_selection()
+            self.selected_row.connect("changed", self.item_selected)
+
+            renderer_video_toggle = Gtk.CellRendererToggle()
+            renderer_video_toggle.connect("toggled", self.on_cell_video_toggled)
+
+            renderer_audio_toggle = Gtk.CellRendererToggle()
+            renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
 
         writeRecentUsedCached(self.coll_filename, self.deck_name)
         self.second_window.show_all()
 
-    def item_selected(self, selection):
-        text_view_front         = builder.get_object('text_view_front')
-        model, row              = selection.get_selected()
-        text_buffer_front       = text_view_front.get_buffer()
+    def item_selected(self, *args):
+        #   Need this try/except to silent a indexerror that will occur case the second window close and if opened again,
+        # merely cosmetic as it will always occur, just select any row and all good.
+        #   The get_selected_rows()[1] will return a empty list at first try when reopening the second window, I just don't know why
+        try:
+            text_view_front         = builder.get_object('text_view_front')
+            path = self.selected_row.get_selected_rows()[1][0]
+            text_buffer_front       = text_view_front.get_buffer()
 
-        text_buffer_front.set_text(model[row][1])
-        text_buffer_front.connect('changed', self.editing_card)
+            text_buffer_front.set_text(self.sub_list_store[path][1])
+            text_buffer_front.connect('changed', self.editing_card)
 
-        text_view_back      = builder.get_object('text_view_back')
+            text_view_back      = builder.get_object('text_view_back')
+     
+            text_buffer_back    = text_view_back.get_buffer()
 
-        path = self.selected_row.get_selected_rows()[1][0]
-        text_buffer_back    = text_view_back.get_buffer()
+            text_buffer_back.set_text(self.sub_list_store_back[path][1])
+            text_buffer_back.connect('changed', self.editing_card_back)
 
-        text_buffer_back.set_text(self.sub_list_store_back[path][1])
-        text_buffer_back.connect('changed', self.editing_card_back)
+        except IndexError:
+            pass
 
     def editing_card(self, text_buffer):
         path = self.selected_row.get_selected_rows()[1][0]
@@ -295,7 +323,7 @@ class Handler(object):
             else:
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
 
-    #Normally this type of function shouldn't be here, but I need it to display the progress correctly
+    #Normally this type of function wouldn't be here, but I need it to display the progress correctly
     def tupleMedias(self, sub_list_store, sub_list_store_back):
         self.tuple_of_sentences = ()
         self.tuple_of_medias    = ()
@@ -339,6 +367,19 @@ class Handler(object):
             progress_bar.set_show_text(False)
 
         return False
+
+    def on_cancel_process_clicked(self, *args):
+        self.second_window_hided = True
+        self.second_window.hide()
+        progress_bar = builder.get_object('progress_bar')
+        progress_bar.set_fraction(0)
+        progress_bar.set_show_text(False)
+
+    def on_second_window_destroy_event(self, *args):
+        self.on_cancel_process_clicked()
+
+    def on_second_window_destroy(self, *args):
+        self.on_cancel_process_clicked()
 
     def on_main_destroy(self, *args):
         Gtk.main_quit()

@@ -77,7 +77,7 @@ def giveMe1Tuple(opened_sub_indexed):
 def subExtractReturnTuple(opened_sub_tupled):
     tuple_sub = (opened_sub_tupled[:2]) + (''.join(opened_sub_tupled[2:]),)
 
-    if len(tuple_sub[2]) > 2:  
+    if len(tuple_sub[2]) > 3:  
         #This tuple shouldn't be passing these two booleans at the end, but I don't know how to display the toggle cells correctly withouth them... so here they are
         final_tuple = (int(tuple_sub[0]),) + ((tuple_sub[2]),) + ((tuple_sub[1].split('-->')[0].replace(',','.')),) + ((tuple_sub[1].split('-->')[1].replace(',','.')),) +(False,) + (False,)
 
