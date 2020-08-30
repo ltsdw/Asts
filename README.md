@@ -25,18 +25,18 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
    cd Asts
    ```
 
-* 3 - Run the run.py
+* 3 - Run the run.py:
    ```
    python run.py
    ```
 
-* 4 - Select the files needed<br>
+* 4 - Select the files needed:
    * **Obs:** A deck will be created if there is no deck with the name specified
    * Generally the collection.anki2 file is under ~/.local/share/Anki2/<profile name>
 
    ![image](https://user-images.githubusercontent.com/44977415/91649743-67053f80-ea4d-11ea-96a4-010026ebaf37.png)
 
-* 5 - Select and edit the cards that you want add<br>
+* 5 - Select and edit the cards that you want add:
    * **Obs:** before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened
    ![image](https://user-images.githubusercontent.com/44977415/91649768-c7947c80-ea4d-11ea-8c1c-e40cf3f7384b.png)
 
