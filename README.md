@@ -34,7 +34,7 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
    * **Obs:** A deck will be created if there is no deck with the name specified
    * Generally the collection.anki2 file is under ~/.local/share/Anki2/<profile name>
 
-   ![image](https://user-images.githubusercontent.com/44977415/91649743-67053f80-ea4d-11ea-96a4-010026ebaf37.png)
+   ![image](https://user-images.githubusercontent.com/44977415/91675024-42729b80-eb11-11ea-8b95-6c285dd340c5.png)
 
 * 5 - Select and edit the cards that you want add:
    * **Obs:** before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened
@@ -45,6 +45,7 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
 
 ## Library
    * [pysrt](https://github.com/byroot/pysrt)
+   * [pyasstosrt](https://github.com/GitBib/pyasstosrt)
 
 ## Related Projects
 
