@@ -8,8 +8,6 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Lock
 
-import time
-
 from ..Funcs import (
         checkIfIsCollection,
         checkIfIsVideo, 
