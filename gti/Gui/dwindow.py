@@ -6,6 +6,7 @@ from anki import Collection as aopen
 from anki.rsbackend import DBError
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Manager, Lock
 
 from ..Funcs import (
         checkIfIsCollection,
@@ -51,26 +52,30 @@ class MyThread(Thread):
         self.tuple_of_sentences         = tuple_of_sentences
 
         self.callDialogAnki           = callDialogAnki
-
+        
     #Normally this functions wouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
+        manager = Manager()
+        lock    = Lock()
+
         with ThreadPoolExecutor() as executor:
             for media in tuple_of_medias:
-                executor.submit(cut, vid_filename, media)
-                GLib.idle_add(self.callback)
+                executor.submit(cut, vid_filename, media, lock, self.callback)
 
+    def writeCards(self, tuple_of_sentence, deck, lock):
+        with lock:
+            (sentence_front, sentence_back, media)  = tuple_of_sentence
 
-    def writeCards(self, tuple_of_sentence, deck):
-        (sentence_front, sentence_back, media)  = tuple_of_sentence
+            sentence_front  = sentence_front.replace('\n', '<br>')
+            sentence_back   = sentence_back.replace('\n', '<br>')
+            card                                    = self.deck.newNote()
+            fname                                   = self.deck.media.addFile(self.cache_dir + '/' + media)
+            card['Front']                           = sentence_front + f'[sound:{fname}]'
+            card['Back']                            = sentence_back
+            self.deck.addNote( card )
+            self.deck.save()
 
-        sentence_front  = sentence_front.replace('\n', '<br>')
-        sentence_back   = sentence_back.replace('\n', '<br>')
-        card                                    = self.deck.newNote()
-        fname                                   = self.deck.media.addFile(self.cache_dir + '/' + media)
-        card['Front']                           = sentence_front + f'[sound:{fname}]'
-        card['Back']                            = sentence_back
-        self.deck.addNote( card )
-        self.deck.save()
+            GLib.idle_add(self.callback)
 
     def makeCards(self, coll_filename, deck_name, tuple_of_sentences):
         card_type = 'Basic'
@@ -83,10 +88,12 @@ class MyThread(Thread):
         self.deck.models.save( model )
         self.deck.models.setCurrent( model )
 
+        manager = Manager()
+        lock = Lock()
+
         with ThreadPoolExecutor() as executor:
             for tuple_of_sentence in tuple_of_sentences:
-                executor.submit(self.writeCards, tuple_of_sentence, self.deck)
-                GLib.idle_add(self.callback)
+                executor.submit(self.writeCards, tuple_of_sentence, self.deck, lock)
 
         self.deck.close()
 
@@ -158,7 +165,7 @@ class Handler(object):
         self.video_sub_file.add_filter(sub_file_filter)
         self.video_sub_file_optional.add_filter(sub_file_filter)
 
-        GLib.timeout_add(50, self.setSensitiveProceedButton, None)
+        GLib.timeout_add(300, self.setSensitiveProceedButton, None)
         
         self.second_window_hided = False
         self.second_window = builder.get_object('second_window')
@@ -167,8 +174,6 @@ class Handler(object):
         self.tuple_of_medias    = ()
 
     def setSensitiveProceedButton(self, *args):
-        GLib.timeout_add(300, self.setSensitiveProceedButton, None)
-
         coll_filename           = self.collection_file.get_filename()
         vid_filename            = self.video_file.get_filename()
         vid_sub_filename        = self.video_sub_file.get_filename()
@@ -194,6 +199,8 @@ class Handler(object):
                 self.button.set_sensitive(False)
         else:
             self.button.set_sensitive(False)
+
+        return True
 
     def on_dellcoll_clicked(self, *args):
        self.collection_file.unselect_all()
@@ -251,15 +258,15 @@ class Handler(object):
             self.selected_row.connect("changed", self.item_selected)
 
             # cell video and audio to toggle
-            renderer_video_toggle = Gtk.CellRendererToggle()
-            column_toggle = Gtk.TreeViewColumn(title='Video', cell_renderer=renderer_video_toggle, active=4)
+            self.renderer_video_toggle = Gtk.CellRendererToggle()
+            column_toggle = Gtk.TreeViewColumn(title='Video', cell_renderer=self.renderer_video_toggle, active=4)
             self.sub_tree_view.append_column(column_toggle)
-            renderer_video_toggle.connect("toggled", self.on_cell_video_toggled)
+            self.renderer_video_toggle.connect("toggled", self.on_cell_video_toggled)
 
-            renderer_audio_toggle = Gtk.CellRendererToggle()
-            column_toggle = Gtk.TreeViewColumn(title='Audio', cell_renderer=renderer_audio_toggle, active=5)
+            self.renderer_audio_toggle = Gtk.CellRendererToggle()
+            column_toggle = Gtk.TreeViewColumn(title='Audio', cell_renderer=self.renderer_audio_toggle, active=5)
             self.sub_tree_view.append_column(column_toggle)
-            renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
+            self.renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
 
         else:
             self.coll_filename          = self.collection_file.get_filename()
@@ -293,6 +300,10 @@ class Handler(object):
 
         writeRecentUsedCached(self.coll_filename, self.deck_name)
         self.second_window.show_all()
+
+        self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+        self.any_toggled = False
+        GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
 
     def item_selected(self, *args):
         #   Need this try/except to silent a indexerror that will occur case the second window close and if opened again,
@@ -331,6 +342,16 @@ class Handler(object):
         else:
             self.sub_list_store[path][4] = not self.sub_list_store[path][4]
 
+        if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
+            self.dict_any[path] = True
+        else: 
+            self.dict_any[path] = False
+
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
+
     def on_cell_audio_toggled(self, widget, path):
         if self.sub_list_store[path][4] == True:
             self.sub_list_store[path][4] = not self.sub_list_store[path][4]
@@ -338,21 +359,55 @@ class Handler(object):
         else:
             self.sub_list_store[path][5] = not self.sub_list_store[path][5]
 
+        if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
+            self.dict_any[path] = True
+        else: 
+            self.dict_any[path] = False
+
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
+
     def on_select_all_video_toggled(self, *args):
+        button      = builder.get_object('select_all_video_checkbutton')
+        button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
             if self.sub_list_store[i][5] == True:
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
             else:
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
-    
+
+        if button_bool:
+            self.dict_any = {key: True for key in range(len(self.sub_list_store))}
+        else:
+            self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
+
     def on_select_all_audio_toggled(self, *args):
+        button      = builder.get_object('select_all_audio_checkbutton')
+        button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
             if self.sub_list_store[i][4] == True:
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
             else:
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
+
+        if button_bool:
+            self.dict_any = {key: True for key in range(len(self.sub_list_store))}
+        else:
+            self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
 
     #Normally this type of function wouldn't be here, but I need it to display the progress correctly
     def tupleMedias(self, sub_list_store, sub_list_store_back):
@@ -369,6 +424,14 @@ class Handler(object):
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
                                                                             f'{self.sub_list_store[i][0]}.mp3'),)
+
+    def setSensitiveConcludeProcess(self, *args):
+        if self.any_toggled:
+            self.conclude_process_button.set_sensitive(True)
+        else:
+            self.conclude_process_button.set_sensitive(False)
+
+        return True
 
     def on_conclude_process_clicked(self, *args):
         self.conclude_process_button.set_sensitive(False)
