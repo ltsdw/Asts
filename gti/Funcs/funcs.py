@@ -2,8 +2,10 @@ from os import environ, mkdir, path, remove, sys, system
 from glob import glob
 from anki import Collection as aopen
 
+sys.path.append(path.abspath('pylib/pyasstosrt'))
 sys.path.append(path.abspath('pylib/pysrt'))
 from pysrt import open as popen
+from pyasstosrt import Subtitle
 
 def createCacheDirIfItNotExists():
     if not path.exists(path.abspath('data')):
@@ -15,7 +17,7 @@ def createCacheDirIfItNotExists():
 
 def writeRecentUsedCached(anki_collection_filename_path, deck_name):
     cache_dir = path.abspath('data/cache')
-    data = f"""{anki_collection_filename_path}\n{deck_name}"""
+    data = f'{anki_collection_filename_path}\n{deck_name}'
 
     with open(cache_dir + '/' + 'cached_usage.txt', 'w+') as f:
         f.write(data)
@@ -68,22 +70,6 @@ def cut(input_file, tuple_of_filenames):
         cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -map 0:a -b:a 320k '{output_file}'.mp3"
         system(cmd)
 
-def openSrtFile(f_path):
-    return popen(f_path)
-
-def giveMe1Tuple(opened_sub_indexed):
-    return tuple(str(opened_sub_indexed).split('\n'))
-
-def subExtractReturnTuple(opened_sub_tupled):
-    tuple_sub = (opened_sub_tupled[:2]) + (''.join(opened_sub_tupled[2:]),)
-
-    if len(tuple_sub[2]) > 3:  
-        #This tuple shouldn't be passing these two booleans at the end, but I don't know how to display the toggle cells correctly withouth them... so here they are
-        final_tuple = (int(tuple_sub[0]),) + ((tuple_sub[2]),) + ((tuple_sub[1].split('-->')[0].replace(',','.')),) + ((tuple_sub[1].split('-->')[1].replace(',','.')),) +(False,) + (False,)
-
-        return final_tuple
-    return ()
-
 def checkIfIsCollection(collection_filename=None):
     if collection_filename == None:
         collection_filename = ''
@@ -98,17 +84,51 @@ def checkIfIsVideo(video_filename=None):
         return True
     return False
 
-def checkIfIsSrt(srt_filename=None):
-    if srt_filename == None:
-        srt_filename = ''
-    if 'srt' in srt_filename.split('.')[-1]:
+def checkIfIsAss(sub_filename=None):
+    if sub_filename == None:
+        sub_filename = ''
+    if 'ass' in sub_filename.split('.')[-1]:
         return True
     return False
 
-def checkIfIsSrtOpt(srt_filename_optional=None):
-    if srt_filename_optional == None:
-        srt_filename_optional = ''
-    if 'srt' in srt_filename_optional.split('.')[-1] or srt_filename_optional == '':
+def checkIfIsSrt(sub_filename=None):
+    if sub_filename == None:
+        sub_filename = ''
+    if 'srt' in sub_filename.split('.')[-1]:
         return True
     return False
+
+def checkIfIsSub(sub_filename=None):
+    if checkIfIsSrt(sub_filename) == True or checkIfIsAss(sub_filename) == True:
+        return True
+    return False
+
+def checkIfIsSubOpt(sub_filename_optional=None):
+    if sub_filename_optional == None:
+        sub_filename_optional = '' 
+    if checkIfIsSub(sub_filename_optional) == True or sub_filename_optional == '':
+        return True
+    return False
+
+def openSubFile(f_path):
+    if checkIfIsAss(f_path):
+        return Subtitle(f_path).export()
+    return popen(f_path)
+
+def giveMe1Tuple(opened_sub_indexed):
+    return tuple(str(opened_sub_indexed).split('\n'))
+
+def subExtractReturnTuple(opened_sub_tupled):
+    tuple_sub = (opened_sub_tupled[:2]) + (''.join(opened_sub_tupled[2:]),)
+
+    if len(tuple_sub[2]) > 3:  
+        final_tuple =   (int(tuple_sub[0]),) + \
+                        ((tuple_sub[2]),) + \
+                        ((tuple_sub[1].split('-->')[0].replace(',','.')),) + \
+                        ((tuple_sub[1].split('-->')[1].replace(',','.')),) + \
+                        (False,) + (False,)
+
+        return final_tuple
+
+    return ()
 

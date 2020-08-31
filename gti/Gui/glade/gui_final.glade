@@ -128,7 +128,7 @@ close it before trying again!</property>
                 <property name="valign">center</property>
                 <property name="margin_start">10</property>
                 <property name="margin_end">10</property>
-                <property name="label" translatable="yes">Srt File With Translation (Optional):</property>
+                <property name="label" translatable="yes">Subtitle File with Translation (Optional):</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -136,7 +136,7 @@ close it before trying again!</property>
               </packing>
             </child>
             <child>
-              <object class="GtkFileChooserButton" id="video_srt_file_optional">
+              <object class="GtkFileChooserButton" id="video_sub_file_optional">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Select a Srt File With Translation (Optional)</property>
@@ -160,7 +160,7 @@ close it before trying again!</property>
                 <property name="valign">center</property>
                 <property name="margin_start">10</property>
                 <property name="margin_end">10</property>
-                <property name="label" translatable="yes">Srt File With The Target Language (Required):</property>
+                <property name="label" translatable="yes">Subtitle File with The Target Language (Required):</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -168,7 +168,7 @@ close it before trying again!</property>
               </packing>
             </child>
             <child>
-              <object class="GtkFileChooserButton" id="video_srt_file">
+              <object class="GtkFileChooserButton" id="video_sub_file">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Select a Srt File (Required)</property>
@@ -251,7 +251,7 @@ close it before trying again!</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="dellsrtopt">
+              <object class="GtkButton" id="dellsubopt">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -265,7 +265,7 @@ close it before trying again!</property>
                 <property name="image">delim</property>
                 <property name="image_position">right</property>
                 <property name="always_show_image">True</property>
-                <signal name="clicked" handler="on_dellsrtopt_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_dellsubopt_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
@@ -273,7 +273,7 @@ close it before trying again!</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="dellsrt">
+              <object class="GtkButton" id="dellsub">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -287,7 +287,7 @@ close it before trying again!</property>
                 <property name="image">delim1</property>
                 <property name="image_position">right</property>
                 <property name="always_show_image">True</property>
-                <signal name="clicked" handler="on_dellsrt_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_dellsub_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
@@ -344,7 +344,6 @@ close it before trying again!</property>
                 <property name="can_focus">False</property>
                 <property name="halign">start</property>
                 <property name="valign">center</property>
-                <property name="margin_right">10</property>
                 <property name="margin_start">10</property>
                 <property name="margin_end">10</property>
                 <property name="label" translatable="yes">Deck Name (Required):</property>
@@ -604,8 +603,6 @@ close it before trying again!</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="margin_left">50</property>
-                <property name="margin_right">55</property>
                 <property name="margin_start">50</property>
                 <property name="margin_end">55</property>
                 <property name="margin_top">5</property>
@@ -623,8 +620,6 @@ close it before trying again!</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="margin_left">50</property>
-                <property name="margin_right">50</property>
                 <property name="margin_start">50</property>
                 <property name="margin_end">50</property>
                 <property name="margin_top">5</property>
@@ -646,8 +641,6 @@ close it before trying again!</property>
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="margin_left">5</property>
-            <property name="margin_right">5</property>
             <property name="margin_start">5</property>
             <property name="margin_end">5</property>
             <property name="margin_top">5</property>

@@ -9,15 +9,17 @@ from concurrent.futures import ThreadPoolExecutor
 
 from ..Funcs import (
         checkIfIsCollection,
-        checkIfIsVideo,
+        checkIfIsVideo, 
+        checkIfIsAss,
         checkIfIsSrt,
-        checkIfIsSrtOpt,
+        checkIfIsSub,
+        checkIfIsSubOpt,
         clearCachedFiles,
         createCacheDirIfItNotExists,
         cut,
         giveMe1Tuple,
         #makeCards,
-        openSrtFile,
+        openSubFile,
         subExtractReturnTuple,
         writeRecentUsedCached
 )
@@ -114,8 +116,8 @@ class Handler(object):
         self.current                    = 0
         self.collection_file            = builder.get_object('collection_file')
         self.video_file                 = builder.get_object('video_file')
-        self.video_srt_file             = builder.get_object('video_srt_file')
-        self.video_srt_file_optional    = builder.get_object('video_srt_file_optional')
+        self.video_sub_file             = builder.get_object('video_sub_file')
+        self.video_sub_file_optional    = builder.get_object('video_sub_file_optional')
         self.deck_name_entry            = builder.get_object('deck_name_entry') 
 
         try:
@@ -149,11 +151,12 @@ class Handler(object):
         vid_file_filter.add_pattern('*.webm')
         self.video_file.add_filter(vid_file_filter)
 
-        srt_file_filter = Gtk.FileFilter()
-        srt_file_filter.set_name('Srt File')
-        srt_file_filter.add_pattern('*.srt')
-        self.video_srt_file.add_filter(srt_file_filter)
-        self.video_srt_file_optional.add_filter(srt_file_filter)
+        sub_file_filter = Gtk.FileFilter()
+        sub_file_filter.set_name('File with Subtitles')
+        sub_file_filter.add_pattern('*.srt')
+        sub_file_filter.add_pattern('*.ass')
+        self.video_sub_file.add_filter(sub_file_filter)
+        self.video_sub_file_optional.add_filter(sub_file_filter)
 
         GLib.timeout_add(50, self.setSensitiveProceedButton, None)
         
@@ -168,67 +171,80 @@ class Handler(object):
 
         coll_filename           = self.collection_file.get_filename()
         vid_filename            = self.video_file.get_filename()
-        vid_srt_filename        = self.video_srt_file.get_filename()
-        vid_srt_filename_opt    = self.video_srt_file_optional.get_filename()
+        vid_sub_filename        = self.video_sub_file.get_filename()
+        vid_sub_filename_opt    = self.video_sub_file_optional.get_filename()
         deck_name               = self.deck_name_entry.get_text()
 
-        if all(
-              (      checkIfIsCollection(coll_filename),
-                     checkIfIsVideo(vid_filename),
-                     checkIfIsSrt(vid_srt_filename),
-                     checkIfIsSrtOpt(vid_srt_filename_opt)
-              )) and checkIfIsSrtOpt(vid_srt_filename_opt) == True and deck_name != '':
-
-            self.button.set_sensitive(True)
-
+        if all(( checkIfIsCollection(coll_filename),
+                 checkIfIsVideo(vid_filename),
+                 checkIfIsSub(vid_sub_filename),
+                 checkIfIsSubOpt(vid_sub_filename_opt),)) and deck_name != '':
+            if checkIfIsSrt(vid_sub_filename) == True == checkIfIsAss(vid_sub_filename_opt) \
+            or checkIfIsAss(vid_sub_filename) == True == checkIfIsSrt(vid_sub_filename_opt):
+                self.button.set_sensitive(False)
+            elif checkIfIsAss(vid_sub_filename) == True == checkIfIsAss(vid_sub_filename_opt) and checkIfIsSubOpt(vid_sub_filename_opt):
+                self.button.set_sensitive(True)
+            elif checkIfIsSrt(vid_sub_filename) == True == checkIfIsSrt(vid_sub_filename_opt) and checkIfIsSubOpt(vid_sub_filename_opt):
+                self.button.set_sensitive(True)
+            elif checkIfIsAss(vid_sub_filename) and checkIfIsSubOpt(vid_sub_filename_opt):
+                self.button.set_sensitive(True)
+            elif checkIfIsSrt(vid_sub_filename) and checkIfIsSubOpt(vid_sub_filename_opt):
+                self.button.set_sensitive(True)
+            else:
+                self.button.set_sensitive(False)
         else:
             self.button.set_sensitive(False)
 
     def on_dellcoll_clicked(self, *args):
-        self.collection_file.unselect_all()
+       self.collection_file.unselect_all()
 
     def on_dellvid_clicked(self, *args):
         self.video_file.unselect_all()
 
-    def on_dellsrt_clicked(self, *args):
-        self.video_srt_file.unselect_all()
+    def on_dellsub_clicked(self, *args):
+        self.video_sub_file.unselect_all()
 
-    def on_dellsrtopt_clicked(self, *args):
-        self.video_srt_file_optional.unselect_all()
+    def on_dellsubopt_clicked(self, *args):
+        self.video_sub_file_optional.unselect_all()
 
     def on_proceed_action_clicked(self, *args):
+        self.conclude_process_button = builder.get_object('conclude_process')
         if not self.second_window_hided:
 
             self.coll_filename          = self.collection_file.get_filename()
             self.vid_filename           = self.video_file.get_filename()
-            self.vid_srt_filename       = self.video_srt_file.get_filename()
-            self.vid_srt_filename_opt   = self.video_srt_file_optional.get_filename()
+            self.vid_sub_filename       = self.video_sub_file.get_filename()
+            self.vid_sub_filename_opt   = self.video_sub_file_optional.get_filename()
             self.deck_name              = self.deck_name_entry.get_text()
 
-            self.open_srt_file          = openSrtFile(self.vid_srt_filename)
+            self.open_sub_file          = openSubFile(self.vid_sub_filename)
             self.sub_tree_view          = builder.get_object('sub_tree_view')
             self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
 
-            for i in range(len(self.open_srt_file)):
-                if subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])):
-                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])))
+            for i in range(len(self.open_sub_file)):
+                if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
+                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
 
-            if self.vid_srt_filename_opt:
-                self.open_srt_file_opt = openSrtFile(self.vid_srt_filename_opt)
+            if self.vid_sub_filename_opt:
+                self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
                 self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool)
-                for i in range(len(self.open_srt_file)):
-                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file_opt[i])))
+                for i in range(len(self.open_sub_file)):
+                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
             else:
                 self.sub_list_store_back = Gtk.ListStore(int, str)
-                for i in range(len(self.open_srt_file)):
+                for i in range(len(self.open_sub_file)):
                     self.sub_list_store_back.append((i, ''))
 
             for i, title in enumerate(['Indice', 'Dialog', 'Start', 'End']):
                 renderer = Gtk.CellRendererText()
                 path_column = Gtk.TreeViewColumn(title=title, cell_renderer=renderer, text=i)
+                if title == 'Dialog':
+                    path_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+                    path_column.set_fixed_width(600)
+                    path_column.set_min_width(600)
                 path_column.set_sort_column_id(i)
                 self.sub_tree_view.append_column(path_column)
-            
+
             self.sub_tree_view.set_model(self.sub_list_store)
 
             self.selected_row = self.sub_tree_view.get_selection()
@@ -248,38 +264,32 @@ class Handler(object):
         else:
             self.coll_filename          = self.collection_file.get_filename()
             self.vid_filename           = self.video_file.get_filename()
-            self.vid_srt_filename       = self.video_srt_file.get_filename()
-            self.vid_srt_filename_opt   = self.video_srt_file_optional.get_filename()
+            self.vid_sub_filename       = self.video_sub_file.get_filename()
+            self.vid_sub_filename_opt   = self.video_sub_file_optional.get_filename()
             self.deck_name              = self.deck_name_entry.get_text()
 
-            self.open_srt_file          = openSrtFile(self.vid_srt_filename)
+            self.open_sub_file          = openSubFile(self.vid_sub_filename)
             self.sub_tree_view          = builder.get_object('sub_tree_view')
             self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
 
-            for i in range(len(self.open_srt_file)):
-                if subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])):
-                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file[i])))
+            for i in range(len(self.open_sub_file)):
+                if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
+                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
 
-            if self.vid_srt_filename_opt:
-                self.open_srt_file_opt = openSrtFile(self.vid_srt_filename_opt)
+            if self.vid_sub_filename_opt:
+                self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
                 self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool)
-                for i in range(len(self.open_srt_file)):
-                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_srt_file_opt[i])))
+                for i in range(len(self.open_sub_file)):
+                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
             else:
                 self.sub_list_store_back = Gtk.ListStore(int, str)
-                for i in range(len(self.open_srt_file)):
+                for i in range(len(self.open_sub_file)):
                     self.sub_list_store_back.append((i, ''))
 
             self.sub_tree_view.set_model(self.sub_list_store)
 
             self.selected_row = self.sub_tree_view.get_selection()
             self.selected_row.connect("changed", self.item_selected)
-
-            renderer_video_toggle = Gtk.CellRendererToggle()
-            renderer_video_toggle.connect("toggled", self.on_cell_video_toggled)
-
-            renderer_audio_toggle = Gtk.CellRendererToggle()
-            renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
 
         writeRecentUsedCached(self.coll_filename, self.deck_name)
         self.second_window.show_all()
@@ -361,7 +371,6 @@ class Handler(object):
                                                                             f'{self.sub_list_store[i][0]}.mp3'),)
 
     def on_conclude_process_clicked(self, *args):
-        self.conclude_process_button = builder.get_object('conclude_process')
         self.conclude_process_button.set_sensitive(False)
 
         self.tupleMedias(self.sub_list_store, self.sub_list_store_back)
