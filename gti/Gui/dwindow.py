@@ -152,7 +152,7 @@ class Handler(object):
         self.video_file.add_filter(vid_file_filter)
 
         sub_file_filter = Gtk.FileFilter()
-        sub_file_filter.set_name('File with Subtitles')
+        sub_file_filter.set_name('Subtitles (ASS/SRT)')
         sub_file_filter.add_pattern('*.srt')
         sub_file_filter.add_pattern('*.ass')
         self.video_sub_file.add_filter(sub_file_filter)

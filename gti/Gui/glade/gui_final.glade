@@ -139,7 +139,7 @@ close it before trying again!</property>
               <object class="GtkFileChooserButton" id="video_sub_file_optional">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Select a Srt File With Translation (Optional)</property>
+                <property name="tooltip_text" translatable="yes">Select a Subtitle File (ASS/SRT) (Optional)</property>
                 <property name="valign">center</property>
                 <property name="margin_start">5</property>
                 <property name="margin_end">5</property>
@@ -171,7 +171,7 @@ close it before trying again!</property>
               <object class="GtkFileChooserButton" id="video_sub_file">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="tooltip_text" translatable="yes">Select a Srt File (Required)</property>
+                <property name="tooltip_text" translatable="yes">Select a Subtitle File (ASS/SRT) (Required)</property>
                 <property name="valign">center</property>
                 <property name="margin_start">5</property>
                 <property name="margin_end">5</property>
