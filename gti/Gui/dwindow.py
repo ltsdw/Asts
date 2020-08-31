@@ -8,6 +8,8 @@ from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Lock
 
+import time
+
 from ..Funcs import (
         checkIfIsCollection,
         checkIfIsVideo, 
@@ -31,13 +33,13 @@ builder.add_from_file(glade_file)
 
 class MyThread(Thread):
     def __init__(
-            self, updateProgress,
-            sub_list_store, vid_filename,
-            sub_list_store_back,
-            coll_filename, deck_name,
-            tuple_of_medias,
-            tuple_of_sentences,
-            callDialogAnki):
+                self, updateProgress,
+                sub_list_store, vid_filename,
+                sub_list_store_back,
+                coll_filename, deck_name,
+                tuple_of_medias,
+                tuple_of_sentences,
+                callDialogAnki):
 
         Thread.__init__(self)
 
@@ -51,12 +53,12 @@ class MyThread(Thread):
         self.tuple_of_medias            = tuple_of_medias
         self.tuple_of_sentences         = tuple_of_sentences
 
-        self.callDialogAnki           = callDialogAnki
-        
+        self.callDialogAnki             = callDialogAnki
+
     #Normally this functions wouldn't be here, but I need them to display a progress bar correctly
     def cutMedias(self, vid_filename, tuple_of_medias):
         manager = Manager()
-        lock    = Lock()
+        lock    = manager.Lock()
 
         with ThreadPoolExecutor() as executor:
             for media in tuple_of_medias:
@@ -89,7 +91,7 @@ class MyThread(Thread):
         self.deck.models.setCurrent( model )
 
         manager = Manager()
-        lock = Lock()
+        lock = manager.Lock()
 
         with ThreadPoolExecutor() as executor:
             for tuple_of_sentence in tuple_of_sentences:
@@ -109,6 +111,7 @@ class MyThread(Thread):
             GLib.idle_add(self.callDialogAnki)
 
         clearCachedFiles()
+
 
 class Handler(object):
 
@@ -301,8 +304,11 @@ class Handler(object):
         writeRecentUsedCached(self.coll_filename, self.deck_name)
         self.second_window.show_all()
 
-        self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+        #   The key value need to be a string to be used correctly when the value of 'path' is passed to the dictionary
+        # otherwise if the 'key' is a int() the value will be assign at wrong place when passed 'path' as a key, even though the path value is correct
+        self.dict_any = {str(key): False for key in range(len(self.sub_list_store))}
         self.any_toggled = False
+
         GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
 
     def item_selected(self, *args):
@@ -343,9 +349,12 @@ class Handler(object):
             self.sub_list_store[path][4] = not self.sub_list_store[path][4]
 
         if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
-            self.dict_any[path] = True
+            if self.renderer_video_toggle.get_active():
+                self.dict_any[str(path)] = True
+            else:
+                self.dict_any[str(path)] = False
         else: 
-            self.dict_any[path] = False
+            self.dict_any[str(path)] = False
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -360,9 +369,12 @@ class Handler(object):
             self.sub_list_store[path][5] = not self.sub_list_store[path][5]
 
         if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
-            self.dict_any[path] = True
+            if self.renderer_audio_toggle.get_active():
+                self.dict_any[str(path)] = True
+            else:
+                self.dict_any[str(path)] = False
         else: 
-            self.dict_any[path] = False
+            self.dict_any[str(path)] = False
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -373,16 +385,23 @@ class Handler(object):
         button      = builder.get_object('select_all_video_checkbutton')
         button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
+            # Only check once if the toggle all is true to populate the entire dictionary with True
+            if button_bool and i == 0:
+                self.dict_any = {str(key): True for key in range(len(self.sub_list_store))}
+
             if self.sub_list_store[i][5] == True:
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
             else:
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
 
-        if button_bool:
-            self.dict_any = {key: True for key in range(len(self.sub_list_store))}
-        else:
-            self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+        #this will check if any value was toggled by distoggling the button all
+        if not button_bool:
+            for i in range(len(self.sub_list_store)):
+                if self.sub_list_store[i][4] == True:
+                    self.dict_any[str(i)] = True
+                else:
+                    self.dict_any[str(i)] = False
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -393,16 +412,23 @@ class Handler(object):
         button      = builder.get_object('select_all_audio_checkbutton')
         button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
+            # Only check once if the toggle all is true to populate the entire dictionary with True
+            if button_bool and i == 0:
+                self.dict_any = {str(key): True for key in range(len(self.sub_list_store))}
+
             if self.sub_list_store[i][4] == True:
                 self.sub_list_store[i][4] = not self.sub_list_store[i][4]
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
             else:
                 self.sub_list_store[i][5] = not self.sub_list_store[i][5]
 
-        if button_bool:
-            self.dict_any = {key: True for key in range(len(self.sub_list_store))}
-        else:
-            self.dict_any = {key: False for key in range(len(self.sub_list_store))}
+        #this will check if any value was toggled by distoggling the button all
+        if not button_bool:
+            for i in range(len(self.sub_list_store)):
+                if self.sub_list_store[i][5] == True:
+                    self.dict_any[str(i)] = True
+                else:
+                    self.dict_any[str(i)] = False
 
         if True in self.dict_any.values():
             self.any_toggled = True
