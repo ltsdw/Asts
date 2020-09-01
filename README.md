@@ -45,8 +45,8 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
    ![image](https://user-images.githubusercontent.com/44977415/91795910-5099e800-ebf5-11ea-8406-373bfcd1ec63.png)
 
 ## Library
-   * [pysrt](https://github.com/byroot/pysrt)
-   * [pyasstosrt](https://github.com/GitBib/pyasstosrt)
+   * [pysrt](https://github.com/byroot/pysrt): python parser for subrip (srt) files by [byroot](https://github.com/byroot)
+   * [pyasstosrt](https://github.com/GitBib/pyasstosrt) under [Apache-2.0 License](https://github.com/GitBib/pyasstosrt/blob/master/LICENSE): convert ass subtitle to srt format by [GitBib](https://github.com/GitBib) 
 
 ## Related Projects
 
