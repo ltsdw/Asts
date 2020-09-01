@@ -65,34 +65,42 @@ class MyThread(Thread):
 
     def writeCards(self, tuple_of_sentence, deck, lock):
         with lock:
-            # default value of snapshot is empty
-            media2 = ''
             try:
-                (sentence_front, sentence_back, media1)         = tuple_of_sentence
-                if media1.split('.')[-1] == 'bmp':
-                    media2 = media1
+                (sentence_front, sentence_back, video_audio)         = tuple_of_sentence
+                # Case only snapshot is selected
+                if video_audio.split('.')[-1] == 'bmp': 
+                    image = media_video_audio = video_audio 
+                    media_image         = self.deck.media.addFile(self.cache_dir + '/' + image)
+                else:
+                    image = None
+                    media_video_audio   = self.deck.media.addFile(self.cache_dir + '/' + video_audio)
 
             except ValueError:
-                (sentence_front, sentence_back, media1, media2) = tuple_of_sentence
+                (sentence_front, sentence_back, video_audio, image) = tuple_of_sentence
 
-            sentence_front  = sentence_front.replace('\n', '<br>')
-            sentence_back   = sentence_back.replace('\n', '<br>')
-            card            = self.deck.newNote()
-            media           = self.deck.media.addFile(self.cache_dir + '/' + media1)
-            ext_of_media    = media1.split('.')[-1]
+                media_video_audio   = self.deck.media.addFile(self.cache_dir + '/' + video_audio)
+                media_image         = self.deck.media.addFile(self.cache_dir + '/' + image)
 
-            if 'mp3' in ext_of_media and not media2:
-                card['Front']   = sentence_front          +   '<br><br>'  + f'[sound:{media}]'
+            sentence_front      = sentence_front.replace('\n', '<br>')
+            sentence_back       = sentence_back.replace('\n', '<br>')
+            card                = self.deck.newNote()
+            ext_of_media        = media_video_audio.split('.')[-1]
+            
+            if 'mp3' in ext_of_media and not image:
+                card['Front']   = sentence_front                    +   '<br><br>'  + f'[sound:{media_video_audio}]'
                 card['Back']    = sentence_back
-            elif 'mp4' in ext_of_media and not media2:
+            
+            elif 'mp4' in ext_of_media and not image:
                 card['Front']   = sentence_front
-                card['Back']    = f'[sound:{media}]'      +   '<br><br>'  + sentence_back
-            elif 'mp3' in ext_of_media and media2:
-                card['Front']   = sentence_front          +   '<br><br>'  + f'[sound:{media}]'
-                card['Back']    = f'<img src="{media2}">' +   '<br><br>'  + sentence_back
+                card['Back']    = f'[sound:{media_video_audio}]'    +   '<br><br>'  + sentence_back
+            
+            elif 'mp3' in ext_of_media and image:
+                card['Front']   = sentence_front                    +   '<br><br>'  + f'[sound:{media_video_audio}]'
+                card['Back']    = f'<img src="{media_image}">'      +   '<br><br>'  + sentence_back
+
             else:
                 card['Front']   = sentence_front
-                card['Back']    = f'<img src="{media2}">' +   '<br><br>'  + sentence_back
+                card['Back']    = f'<img src="{media_image}">'      +   '<br><br>'  + sentence_back
 
             self.deck.addNote( card )
             self.deck.save()
@@ -409,6 +417,9 @@ class Handler(object):
             self.sub_list_store[path][4]    = not self.sub_list_store[path][4]
             self.sub_list_store[path][6]    = not self.sub_list_store[path][6] 
             self.dict_any[str(path)]        = self.sub_list_store[path][6]
+        elif self.sub_list_store[path][6] and self.sub_list_store[path][5]:
+            self.sub_list_store[path][6]    = not self.sub_list_store[path][6]
+            self.dict_any[str(path)]        = self.sub_list_store[path][5]
         else:
             self.sub_list_store[path][6]    = not self.sub_list_store[path][6]
             self.dict_any[str(path)]        = self.sub_list_store[path][6]
