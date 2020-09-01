@@ -489,7 +489,6 @@ close it before trying again!</property>
                 <property name="can_focus">False</property>
                 <property name="halign">end</property>
                 <property name="margin_start">20</property>
-                <property name="margin_end">20</property>
                 <property name="margin_top">5</property>
                 <property name="margin_bottom">5</property>
                 <child>
@@ -573,6 +572,42 @@ close it before trying again!</property>
                   <packing>
                     <property name="left_attach">2</property>
                     <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkCheckButton" id="select_all_snapshot_checkbutton">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="focus_on_click">False</property>
+                    <property name="receives_default">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">5</property>
+                    <property name="margin_end">5</property>
+                    <property name="margin_top">5</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="inconsistent">True</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="on_select_all_snapshot_checkbutton_toggled" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">center</property>
+                    <property name="margin_start">10</property>
+                    <property name="margin_end">5</property>
+                    <property name="margin_bottom">5</property>
+                    <property name="label" translatable="yes">Snapshot</property>
+                    <property name="justify">center</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">1</property>
                   </packing>
                 </child>
                 <child>

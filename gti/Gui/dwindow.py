@@ -64,14 +64,35 @@ class MyThread(Thread):
 
     def writeCards(self, tuple_of_sentence, deck, lock):
         with lock:
-            (sentence_front, sentence_back, media)  = tuple_of_sentence
+            # default value of snapshot is empty
+            media2 = ''
+            try:
+                (sentence_front, sentence_back, media1)         = tuple_of_sentence
+                if media1.split('.')[-1] == 'bmp':
+                    media2 = media1
+
+            except ValueError:
+                (sentence_front, sentence_back, media1, media2) = tuple_of_sentence
 
             sentence_front  = sentence_front.replace('\n', '<br>')
             sentence_back   = sentence_back.replace('\n', '<br>')
-            card                                    = self.deck.newNote()
-            fname                                   = self.deck.media.addFile(self.cache_dir + '/' + media)
-            card['Front']                           = sentence_front + f'[sound:{fname}]'
-            card['Back']                            = sentence_back
+            card            = self.deck.newNote()
+            media           = self.deck.media.addFile(self.cache_dir + '/' + media1)
+            ext_of_media    = media1.split('.')[-1]
+
+            if 'mp3' in ext_of_media and not media2:
+                card['Front']   = sentence_front          +   '<br><br>'  + f'[sound:{media}]'
+                card['Back']    = sentence_back
+            elif 'mp4' in ext_of_media and not media2:
+                card['Front']   = sentence_front
+                card['Back']    = f'[sound:{media}]'      +   '<br><br>'  + sentence_back
+            elif 'mp3' in ext_of_media and media2:
+                card['Front']   = sentence_front          +   '<br><br>'  + f'[sound:{media}]'
+                card['Back']    = f'<img src="{media2}">' +   '<br><br>'  + sentence_back
+            else:
+                card['Front']   = sentence_front
+                card['Back']    = f'<img src="{media2}">' +   '<br><br>'  + sentence_back
+
             self.deck.addNote( card )
             self.deck.save()
 
@@ -171,9 +192,6 @@ class Handler(object):
         self.second_window_hided = False
         self.second_window = builder.get_object('second_window')
 
-        self.tuple_of_sentences = ()
-        self.tuple_of_medias    = ()
-
     def setSensitiveProceedButton(self, *args):
         coll_filename           = self.collection_file.get_filename()
         vid_filename            = self.video_file.get_filename()
@@ -227,7 +245,7 @@ class Handler(object):
 
             self.open_sub_file          = openSubFile(self.vid_sub_filename)
             self.sub_tree_view          = builder.get_object('sub_tree_view')
-            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
+            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
 
             for i in range(len(self.open_sub_file)):
                 if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
@@ -235,7 +253,7 @@ class Handler(object):
 
             if self.vid_sub_filename_opt:
                 self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
-                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool)
+                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
                 for i in range(len(self.open_sub_file)):
                     self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
             else:
@@ -248,8 +266,8 @@ class Handler(object):
                 path_column = Gtk.TreeViewColumn(title=title, cell_renderer=renderer, text=i)
                 if title == 'Dialog':
                     path_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
-                    path_column.set_fixed_width(600)
-                    path_column.set_min_width(600)
+                    path_column.set_fixed_width(520)
+                    path_column.set_min_width(520)
                 path_column.set_sort_column_id(i)
                 self.sub_tree_view.append_column(path_column)
 
@@ -258,7 +276,7 @@ class Handler(object):
             self.selected_row = self.sub_tree_view.get_selection()
             self.selected_row.connect("changed", self.item_selected)
 
-            # cell video and audio to toggle
+            # cell video, audio and snapshot to toggle
             self.renderer_video_toggle = Gtk.CellRendererToggle()
             column_toggle = Gtk.TreeViewColumn(title='Video', cell_renderer=self.renderer_video_toggle, active=4)
             self.sub_tree_view.append_column(column_toggle)
@@ -269,6 +287,11 @@ class Handler(object):
             self.sub_tree_view.append_column(column_toggle)
             self.renderer_audio_toggle.connect("toggled", self.on_cell_audio_toggled)
 
+            self.renderer_snapshot_toggle = Gtk.CellRendererToggle()
+            column_toggle = Gtk.TreeViewColumn(title='Snapshot', cell_renderer=self.renderer_snapshot_toggle, active=6)
+            self.sub_tree_view.append_column(column_toggle)
+            self.renderer_snapshot_toggle.connect("toggled", self.on_cell_snapshot_toggled)
+
         else:
             self.coll_filename          = self.collection_file.get_filename()
             self.vid_filename           = self.video_file.get_filename()
@@ -278,7 +301,7 @@ class Handler(object):
 
             self.open_sub_file          = openSubFile(self.vid_sub_filename)
             self.sub_tree_view          = builder.get_object('sub_tree_view')
-            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool)
+            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
 
             for i in range(len(self.open_sub_file)):
                 if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
@@ -286,7 +309,7 @@ class Handler(object):
 
             if self.vid_sub_filename_opt:
                 self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
-                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool)
+                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
                 for i in range(len(self.open_sub_file)):
                     self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
             else:
@@ -340,19 +363,17 @@ class Handler(object):
         self.sub_list_store_back[path][1] = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
 
     def on_cell_video_toggled(self, widget, path):
-        if self.sub_list_store[path][5] == True:
-            self.sub_list_store[path][5] = not self.sub_list_store[path][5]
-            self.sub_list_store[path][4] = not self.sub_list_store[path][4]
+        if self.sub_list_store[path][5]:
+            self.sub_list_store[path][5]    = not self.sub_list_store[path][5]
+            self.sub_list_store[path][4]    = not self.sub_list_store[path][4] 
+            self.dict_any[str(path)]        = self.sub_list_store[path][4]
+        elif self.sub_list_store[path][6]:
+            self.sub_list_store[path][6]    = not self.sub_list_store[path][6]
+            self.sub_list_store[path][4]    = not self.sub_list_store[path][4]
+            self.dict_any[str(path)]        = self.sub_list_store[path][4]
         else:
-            self.sub_list_store[path][4] = not self.sub_list_store[path][4]
-
-        if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
-            if self.renderer_video_toggle.get_active():
-                self.dict_any[str(path)] = True
-            else:
-                self.dict_any[str(path)] = False
-        else: 
-            self.dict_any[str(path)] = False
+            self.sub_list_store[path][4]    = not self.sub_list_store[path][4]
+            self.dict_any[str(path)]        = self.sub_list_store[path][4]
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -360,19 +381,30 @@ class Handler(object):
             self.any_toggled = False
 
     def on_cell_audio_toggled(self, widget, path):
-        if self.sub_list_store[path][4] == True:
-            self.sub_list_store[path][4] = not self.sub_list_store[path][4]
-            self.sub_list_store[path][5] = not self.sub_list_store[path][5]
+        if self.sub_list_store[path][4]:
+            self.sub_list_store[path][4]    = not self.sub_list_store[path][4]
+            self.sub_list_store[path][5]    = not self.sub_list_store[path][5] 
+            self.dict_any[str(path)]        = self.sub_list_store[path][5]
+        elif self.sub_list_store[path][5] and self.sub_list_store[path][6]:
+            self.sub_list_store[path][5]    = not self.sub_list_store[path][5]
+            self.dict_any[str(path)]        = self.sub_list_store[path][6]
         else:
-            self.sub_list_store[path][5] = not self.sub_list_store[path][5]
+            self.sub_list_store[path][5]    = not self.sub_list_store[path][5]
+            self.dict_any[str(path)]        = self.sub_list_store[path][5]
 
-        if self.sub_list_store[path][4] == True or self.sub_list_store[path][5] == True:
-            if self.renderer_audio_toggle.get_active():
-                self.dict_any[str(path)] = True
-            else:
-                self.dict_any[str(path)] = False
-        else: 
-            self.dict_any[str(path)] = False
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
+
+    def on_cell_snapshot_toggled(self, widget, path):
+        if self.sub_list_store[path][4]:
+            self.sub_list_store[path][4]    = not self.sub_list_store[path][4]
+            self.sub_list_store[path][6]    = not self.sub_list_store[path][6] 
+            self.dict_any[str(path)]        = self.sub_list_store[path][6]
+        else:
+            self.sub_list_store[path][6]    = not self.sub_list_store[path][6]
+            self.dict_any[str(path)]        = self.sub_list_store[path][6]
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -380,26 +412,18 @@ class Handler(object):
             self.any_toggled = False
 
     def on_select_all_video_toggled(self, *args):
-        button      = builder.get_object('select_all_video_checkbutton')
-        button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
-            # Only check once if the toggle all is true to populate the entire dictionary with True
-            if button_bool and i == 0:
-                self.dict_any = {str(key): True for key in range(len(self.sub_list_store))}
-
-            if self.sub_list_store[i][5] == True:
-                self.sub_list_store[i][5] = not self.sub_list_store[i][5]
-                self.sub_list_store[i][4] = not self.sub_list_store[i][4]
+            if self.sub_list_store[i][5]:
+                self.sub_list_store[i][5]   = not self.sub_list_store[i][5]
+                self.sub_list_store[i][4]   = not self.sub_list_store[i][4]
+                self.dict_any[str(i)]       = self.sub_list_store[i][4]
+            elif self.sub_list_store[i][6]:
+                self.sub_list_store[i][6]   = not self.sub_list_store[i][6]
+                self.sub_list_store[i][4]   = not self.sub_list_store[i][4]
+                self.dict_any[str(i)]       = self.sub_list_store[i][4]
             else:
-                self.sub_list_store[i][4] = not self.sub_list_store[i][4]
-
-        #this will check if any value was toggled by distoggling the button all
-        if not button_bool:
-            for i in range(len(self.sub_list_store)):
-                if self.sub_list_store[i][4] == True:
-                    self.dict_any[str(i)] = True
-                else:
-                    self.dict_any[str(i)] = False
+                self.sub_list_store[i][4]   = not self.sub_list_store[i][4]
+                self.dict_any[str(i)]       = self.sub_list_store[i][4]
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -407,26 +431,32 @@ class Handler(object):
             self.any_toggled = False
 
     def on_select_all_audio_toggled(self, *args):
-        button      = builder.get_object('select_all_audio_checkbutton')
-        button_bool = button.get_active()
         for i in range(len(self.sub_list_store)):
-            # Only check once if the toggle all is true to populate the entire dictionary with True
-            if button_bool and i == 0:
-                self.dict_any = {str(key): True for key in range(len(self.sub_list_store))}
-
-            if self.sub_list_store[i][4] == True:
-                self.sub_list_store[i][4] = not self.sub_list_store[i][4]
-                self.sub_list_store[i][5] = not self.sub_list_store[i][5]
+            if self.sub_list_store[i][4]:
+                self.sub_list_store[i][4]   = not self.sub_list_store[i][4]
+                self.sub_list_store[i][5]   = not self.sub_list_store[i][5]
+                self.dict_any[str(i)]       = self.sub_list_store[i][5]
+            elif self.sub_list_store[i][5] and self.sub_list_store[i][6]:
+                self.sub_list_store[i][5]   = not self.sub_list_store[i][5]
+                self.dict_any[str(i)]       = self.sub_list_store[i][6]
             else:
-                self.sub_list_store[i][5] = not self.sub_list_store[i][5]
+                self.sub_list_store[i][5]   = not self.sub_list_store[i][5]
+                self.dict_any[str(i)]       = self.sub_list_store[i][5]
 
-        #this will check if any value was toggled by distoggling the button all
-        if not button_bool:
-            for i in range(len(self.sub_list_store)):
-                if self.sub_list_store[i][5] == True:
-                    self.dict_any[str(i)] = True
-                else:
-                    self.dict_any[str(i)] = False
+        if True in self.dict_any.values():
+            self.any_toggled = True
+        else:
+            self.any_toggled = False
+
+    def on_select_all_snapshot_checkbutton_toggled(self, *args):
+        for i in range(len(self.sub_list_store)):
+            if self.sub_list_store[i][4]:
+                self.sub_list_store[i][4]   = not self.sub_list_store[i][4]
+                self.sub_list_store[i][6]   = not self.sub_list_store[i][6]
+                self.dict_any[str(i)]       = self.sub_list_store[i][6]
+            else:
+                self.sub_list_store[i][6]   = not self.sub_list_store[i][6]
+                self.dict_any[str(i)]       = self.sub_list_store[i][6]
 
         if True in self.dict_any.values():
             self.any_toggled = True
@@ -438,16 +468,31 @@ class Handler(object):
         self.tuple_of_sentences = ()
         self.tuple_of_medias    = ()
         for i in range(len(self.sub_list_store)):
-            if self.sub_list_store[i][4] == True or self.sub_list_store[i][5] == True:
+            if self.sub_list_store[i][4] or self.sub_list_store[i][5] or self.sub_list_store[i][6]:
                 self.tuple_of_medias = self.tuple_of_medias + ((tuple(self.sub_list_store[i][:])),)
-                if self.sub_list_store[i][4]:
+
+                if self.sub_list_store[i][4] and self.sub_list_store[i][6]:
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
+                                                                            self.sub_list_store_back[i][1],
+                                                                            f'{self.sub_list_store[i][0]}.mp4',
+                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
+                elif self.sub_list_store[i][5] and self.sub_list_store[i][6]:
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
+                                                                            self.sub_list_store_back[i][1],
+                                                                            f'{self.sub_list_store[i][0]}.mp3',
+                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
+                elif self.sub_list_store[i][4] and not self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
                                                                             f'{self.sub_list_store[i][0]}.mp4'),)
-                else:
+                elif self.sub_list_store[i][5] and not self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
                                                                             f'{self.sub_list_store[i][0]}.mp3'),)
+                else:
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
+                                                                            self.sub_list_store_back[i][1],
+                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
 
     def setSensitiveConcludeProcess(self, *args):
         if self.any_toggled:

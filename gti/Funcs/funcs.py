@@ -64,12 +64,16 @@ def cut(input_file, tuple_of_filenames, lock, callback):
         end         = tuple_of_filenames[3]
         video       = tuple_of_filenames[4]
         audio       = tuple_of_filenames[5]
+        snapshot    = tuple_of_filenames[6]
 
         if video:
-            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -vf scale=640:480 -async 1 {output_file}.mp4"
+            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -vf scale=640:-1 -async 1 {output_file}.mp4"
             system(cmd)
         if audio:
-            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -map 0:a -b:a 320k '{output_file}'.mp3"
+            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -map 0:a -b:a 320k {output_file}.mp3"
+            system(cmd)
+        if snapshot:
+            cmd = f"ffmpeg -v quiet -y -ss {start} -i '{input_file}' -vsync 0 -vframes 1 -filter:v scale=640:-1 {output_file}.bmp"
             system(cmd)
 
         GLib.idle_add(callback)
@@ -130,7 +134,7 @@ def subExtractReturnTuple(opened_sub_tupled):
                         ((tuple_sub[2]),) + \
                         ((tuple_sub[1].split('-->')[0].replace(',','.')),) + \
                         ((tuple_sub[1].split('-->')[1].replace(',','.')),) + \
-                        (False,) + (False,)
+                        (False,) + (False,) + (False,)
 
         return final_tuple
 
