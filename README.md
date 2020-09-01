@@ -31,13 +31,14 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
    ```
 
 * 4 - Select the files needed:
-   * **Obs:** A deck will be created if there is no deck with the name specified
+   * A deck will be created if there is no deck with the name specified.
    * Generally the collection.anki2 file is under ~/.local/share/Anki2/<profile name>
 
    ![image](https://user-images.githubusercontent.com/44977415/91675024-42729b80-eb11-11ea-8b95-6c285dd340c5.png)
 
 * 5 - Select and edit the cards that you want add:
-   * **Obs:** before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened
+   * Before adding cards certify that your anki is **closed**, it's **not possible** to add new cards while anki still opened.
+   * It's possible edit both sides (front and back) before adding a card.
    ![image](https://user-images.githubusercontent.com/44977415/91822561-57812480-ec0e-11ea-9de3-908d0e3908ff.png)
 
 ## Anki Card Example (Front & Back)
