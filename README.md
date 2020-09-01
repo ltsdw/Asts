@@ -38,7 +38,7 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
 
 * 5 - Select and edit the cards that you want add:
    * **Obs:** before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened
-   ![image](https://user-images.githubusercontent.com/44977415/91796468-94d9b800-ebf6-11ea-8ad5-50bedf5d4ebd.png)
+   ![image](https://user-images.githubusercontent.com/44977415/91822561-57812480-ec0e-11ea-9de3-908d0e3908ff.png)
 
 ## Anki Card Example (Front & Back)
    ![image](https://user-images.githubusercontent.com/44977415/91795910-5099e800-ebf5-11ea-8406-373bfcd1ec63.png)
