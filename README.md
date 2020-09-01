@@ -38,10 +38,10 @@ Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs
 
 * 5 - Select and edit the cards that you want add:
    * **Obs:** before adding cards certify that your anki is closed, it's not possible to add new cards while anki still opened
-   ![image](https://user-images.githubusercontent.com/44977415/91649768-c7947c80-ea4d-11ea-8c1c-e40cf3f7384b.png)
+   ![image](https://user-images.githubusercontent.com/44977415/91795699-b46fe100-ebf4-11ea-84bc-bba63f75c36e.png)
 
 ## Anki Card Example (Front & Back)
-   ![image](https://user-images.githubusercontent.com/44977415/91649780-f3affd80-ea4d-11ea-8d9f-7c5bbb99928b.png)
+   ![image](https://user-images.githubusercontent.com/44977415/91795764-e6814300-ebf4-11ea-80ed-cf07ff472d41.png)
 
 ## Library
    * [pysrt](https://github.com/byroot/pysrt)
