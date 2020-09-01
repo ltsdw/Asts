@@ -262,14 +262,19 @@ class Handler(object):
 
             if self.vid_sub_filename_opt:
                 self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
+
+                #   Despite of  the only values that are importante in self.sub_list_store_back
+                # are the first value (int) and the second value (str)
+                # but I need populate it with the other values because the fuction return them, but on the back
+                # it doesn't have any use.
                 self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+                
                 #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
                 # so this one here will fill the back with nothing when it's get lost
-                try:
-                    for i in range(len(self.open_sub_file)):
+                for i in range(len(self.open_sub_file)):
+                    try:
                         self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
-                except IndexError:
-                    for i in range(len(self.open_sub_file)):
+                    except IndexError:
                         self.sub_list_store_back.append((i, '', '', '', False, False, False))                   
             else:
                 self.sub_list_store_back = Gtk.ListStore(int, str)
@@ -324,9 +329,20 @@ class Handler(object):
 
             if self.vid_sub_filename_opt:
                 self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
+
+                #   Despite of  the only values that are importante in self.sub_list_store_back
+                # are the first value (int) and the second value (str)
+                # but I need populate it with the other values because the fuction return them, but on the back
+                # it doesn't have any use.
                 self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+                
+                #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
+                # so this one here will fill the back with nothing when it's get lost
                 for i in range(len(self.open_sub_file)):
-                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
+                    try:
+                        self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
+                    except IndexError:
+                        self.sub_list_store_back.append((i, '', '', '', False, False, False))
             else:
                 self.sub_list_store_back = Gtk.ListStore(int, str)
                 for i in range(len(self.open_sub_file)):
