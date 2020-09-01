@@ -7,6 +7,7 @@ from anki.rsbackend import DBError
 from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Manager, Lock
+from uuid import uuid1
 
 from ..Funcs import (
         checkIfIsCollection,
@@ -254,8 +255,14 @@ class Handler(object):
             if self.vid_sub_filename_opt:
                 self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
                 self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
-                for i in range(len(self.open_sub_file)):
-                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
+                #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
+                # so this one here will fill the back with nothing when it's get lost
+                try:
+                    for i in range(len(self.open_sub_file)):
+                        self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
+                except IndexError:
+                    for i in range(len(self.open_sub_file)):
+                        self.sub_list_store_back.append((i, '', '', '', False, False, False))                   
             else:
                 self.sub_list_store_back = Gtk.ListStore(int, str)
                 for i in range(len(self.open_sub_file)):
@@ -469,30 +476,33 @@ class Handler(object):
         self.tuple_of_medias    = ()
         for i in range(len(self.sub_list_store)):
             if self.sub_list_store[i][4] or self.sub_list_store[i][5] or self.sub_list_store[i][6]:
-                self.tuple_of_medias = self.tuple_of_medias + ((tuple(self.sub_list_store[i][:])),)
+                #   A unique id for each media, some images will conflict if it has the same name as a image
+                # on anki media collection
+                uuid_media = uuid1().int
+                self.tuple_of_medias = self.tuple_of_medias + ( tuple([uuid_media] + self.sub_list_store[i][1:]),)
 
                 if self.sub_list_store[i][4] and self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
-                                                                            f'{self.sub_list_store[i][0]}.mp4',
-                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
+                                                                            f'{uuid_media}.mp4',
+                                                                            f'{uuid_media}.bmp'),)
                 elif self.sub_list_store[i][5] and self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
-                                                                            f'{self.sub_list_store[i][0]}.mp3',
-                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
+                                                                            f'{uuid_media}.mp3',
+                                                                            f'{uuid_media}.bmp'),)
                 elif self.sub_list_store[i][4] and not self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
-                                                                            f'{self.sub_list_store[i][0]}.mp4'),)
+                                                                            f'{uuid_media}.mp4'),)
                 elif self.sub_list_store[i][5] and not self.sub_list_store[i][6]:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
-                                                                            f'{self.sub_list_store[i][0]}.mp3'),)
+                                                                            f'{uuid_media}.mp3'),)
                 else:
                     self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
                                                                             self.sub_list_store_back[i][1],
-                                                                            f'{self.sub_list_store[i][0]}.bmp'),)
+                                                                            f'{uuid_media}.bmp'),)
 
     def setSensitiveConcludeProcess(self, *args):
         if self.any_toggled:
