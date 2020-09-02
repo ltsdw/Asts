@@ -581,7 +581,7 @@ class Handler(object):
     def searchIt(self, search_entry):
         term_searched = self.search_entry.get_text()
         for i, term in enumerate(self.sub_list_store):
-            if term_searched in term[1].lower():
+            if term_searched in term[1].lower() and not term_searched == '':
                 self.sub_tree_view.set_cursor(i)
                 break
 
