@@ -243,7 +243,9 @@ class Handler(object):
         self.video_sub_file_optional.unselect_all()
 
     def on_proceed_action_clicked(self, *args):
-        self.conclude_process_button = builder.get_object('conclude_process')
+        self.conclude_process_button    = builder.get_object('conclude_process')
+        self.search_entry               = builder.get_object('search_entry')
+
         if not self.second_window_hided:
 
             self.coll_filename          = self.collection_file.get_filename()
@@ -362,6 +364,8 @@ class Handler(object):
         self.any_toggled = False
 
         GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
+
+        self.search_entry.connect('changed', self.searchIt)
 
     def item_selected(self, *args):
         #   Need this try/except to silent a indexerror that will occur case the second window close and if opened again,
@@ -573,6 +577,13 @@ class Handler(object):
             progress_bar.set_show_text(False)
 
         return False
+
+    def searchIt(self, search_entry):
+        term_searched = self.search_entry.get_text()
+        for i, term in enumerate(self.sub_list_store):
+            if term_searched in term[1].lower():
+                self.sub_tree_view.set_cursor(i)
+                break
 
     def on_cancel_process_clicked(self, *args):
         self.conclude_process_button.set_sensitive(True)
