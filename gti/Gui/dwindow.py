@@ -1,6 +1,6 @@
 from gi import require_version
 require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk, GLib, Pango
 from os import path, system
 from anki import Collection as aopen
 from anki.rsbackend import DBError
@@ -246,42 +246,25 @@ class Handler(object):
         self.conclude_process_button    = builder.get_object('conclude_process')
         self.search_entry               = builder.get_object('search_entry')
 
+        self.coll_filename          = self.collection_file.get_filename()
+        self.vid_filename           = self.video_file.get_filename()
+        self.vid_sub_filename       = self.video_sub_file.get_filename()
+        self.vid_sub_filename_opt   = self.video_sub_file_optional.get_filename()
+        self.deck_name              = self.deck_name_entry.get_text()
+
+        self.open_sub_file          = openSubFile(self.vid_sub_filename)
+        self.sub_tree_view          = builder.get_object('sub_tree_view')
+        self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+
+        #   Despite of  the only values that are importante in self.sub_list_store_back
+        # are the first value (int) and the second value (str)
+        # but I need populate it with the other values because the fuction return them, but on the back
+        # it doesn't have any use.
+        self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+
+        #   Checking if is the first time that is window is generated
+        # this prevent drawing duplicated elements
         if not self.second_window_hided:
-
-            self.coll_filename          = self.collection_file.get_filename()
-            self.vid_filename           = self.video_file.get_filename()
-            self.vid_sub_filename       = self.video_sub_file.get_filename()
-            self.vid_sub_filename_opt   = self.video_sub_file_optional.get_filename()
-            self.deck_name              = self.deck_name_entry.get_text()
-
-            self.open_sub_file          = openSubFile(self.vid_sub_filename)
-            self.sub_tree_view          = builder.get_object('sub_tree_view')
-            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
-
-            for i in range(len(self.open_sub_file)):
-                if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
-                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
-
-            if self.vid_sub_filename_opt:
-                self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
-
-                #   Despite of  the only values that are importante in self.sub_list_store_back
-                # are the first value (int) and the second value (str)
-                # but I need populate it with the other values because the fuction return them, but on the back
-                # it doesn't have any use.
-                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
-                
-                #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
-                # so this one here will fill the back with nothing when it's get lost
-                for i in range(len(self.open_sub_file)):
-                    try:
-                        self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
-                    except IndexError:
-                        self.sub_list_store_back.append((i, '', '', '', False, False, False))                   
-            else:
-                self.sub_list_store_back = Gtk.ListStore(int, str)
-                for i in range(len(self.open_sub_file)):
-                    self.sub_list_store_back.append((i, ''))
 
             for i, title in enumerate(['Indice', 'Dialog', 'Start', 'End']):
                 renderer = Gtk.CellRendererText()
@@ -292,8 +275,6 @@ class Handler(object):
                     path_column.set_min_width(520)
                 path_column.set_sort_column_id(i)
                 self.sub_tree_view.append_column(path_column)
-
-            self.sub_tree_view.set_model(self.sub_list_store)
 
             self.selected_row = self.sub_tree_view.get_selection()
             self.selected_row.connect("changed", self.item_selected)
@@ -314,46 +295,39 @@ class Handler(object):
             self.sub_tree_view.append_column(column_toggle)
             self.renderer_snapshot_toggle.connect("toggled", self.on_cell_snapshot_toggled)
 
-        else:
-            self.coll_filename          = self.collection_file.get_filename()
-            self.vid_filename           = self.video_file.get_filename()
-            self.vid_sub_filename       = self.video_sub_file.get_filename()
-            self.vid_sub_filename_opt   = self.video_sub_file_optional.get_filename()
-            self.deck_name              = self.deck_name_entry.get_text()
+            # Toolbar
+            self.tag_underline          = ('<u>', '</u>')
+            text_view_front             = builder.get_object('text_view_front')
+            self.text_buffer_front      = text_view_front.get_buffer()
+            #self.tag_underline          = self.text_buffer_front.create_tag('underline', underline=Pango.Underline.SINGLE)
+            self.toolbar                = builder.get_object('toolbar')
+            self.button_underline       = Gtk.ToolButton()
+            self.button_underline.set_icon_name('format-text-underline-symbolic')
+            self.toolbar.insert(self.button_underline, 0)
+            self.button_underline.connect('clicked', self.on_toolbar_button_clicked, self.tag_underline)
 
-            self.open_sub_file          = openSubFile(self.vid_sub_filename)
-            self.sub_tree_view          = builder.get_object('sub_tree_view')
-            self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+        ### From here everything is generated even if the window is hided
+        for i in range(len(self.open_sub_file)):
+            if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
+                self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
 
+        if self.vid_sub_filename_opt:
+            self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
+            
+            #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
+            # so this one here will fill the back with nothing when it's get lost
             for i in range(len(self.open_sub_file)):
-                if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
-                    self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
+                try:
+                    self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
+                except IndexError:
+                    self.sub_list_store_back.append((i, '', '', '', False, False, False))                   
+        else:
+            self.sub_list_store_back = Gtk.ListStore(int, str)
+            for i in range(len(self.open_sub_file)):
+                self.sub_list_store_back.append((i, ''))
 
-            if self.vid_sub_filename_opt:
-                self.open_sub_file_opt = openSubFile(self.vid_sub_filename_opt)
-
-                #   Despite of  the only values that are importante in self.sub_list_store_back
-                # are the first value (int) and the second value (str)
-                # but I need populate it with the other values because the fuction return them, but on the back
-                # it doesn't have any use.
-                self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
-                
-                #   I don't know how to handle a optional input with differents lenght over the vid_sub_filename
-                # so this one here will fill the back with nothing when it's get lost
-                for i in range(len(self.open_sub_file)):
-                    try:
-                        self.sub_list_store_back.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file_opt[i])))
-                    except IndexError:
-                        self.sub_list_store_back.append((i, '', '', '', False, False, False))
-            else:
-                self.sub_list_store_back = Gtk.ListStore(int, str)
-                for i in range(len(self.open_sub_file)):
-                    self.sub_list_store_back.append((i, ''))
-
-            self.sub_tree_view.set_model(self.sub_list_store)
-
-            self.selected_row = self.sub_tree_view.get_selection()
-            self.selected_row.connect("changed", self.item_selected)
+        # setting the model after all the lists are already populated
+        self.sub_tree_view.set_model(self.sub_list_store)
 
         writeRecentUsedCached(self.coll_filename, self.deck_name)
         self.second_window.show_all()
@@ -363,6 +337,9 @@ class Handler(object):
         self.dict_any = {str(key): False for key in range(len(self.sub_list_store))}
         self.any_toggled = False
 
+        # Tags
+        #self.dict_any_tags = {str(key): (None, False) for key in range(len(self.sub_list_store))}
+
         GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
 
         self.search_entry.connect('changed', self.searchIt)
@@ -371,31 +348,54 @@ class Handler(object):
         #   Need this try/except to silent a indexerror that will occur case the second window close and if opened again,
         # merely cosmetic as it will always occur, just select any row and all good.
         #   The get_selected_rows()[1] will return a empty list at first try when reopening the second window, I just don't know why
+
         try:
-            text_view_front         = builder.get_object('text_view_front')
-            path = self.selected_row.get_selected_rows()[1][0]
-            text_buffer_front       = text_view_front.get_buffer()
-
-            text_buffer_front.set_text(self.sub_list_store[path][1])
-            text_buffer_front.connect('changed', self.editing_card)
-
+            iter_start_front        = self.text_buffer_front.get_start_iter()
+            iter_end_front          = self.text_buffer_front.get_end_iter()
+            path                    = self.selected_row.get_selected_rows()[1][0]
+            self.text_buffer_front.set_text(self.sub_list_store[path][1])
+            self.text_buffer_front.connect('changed', self.editingCard)
+            
             text_view_back      = builder.get_object('text_view_back')
-     
-            text_buffer_back    = text_view_back.get_buffer()
-
-            text_buffer_back.set_text(self.sub_list_store_back[path][1])
-            text_buffer_back.connect('changed', self.editing_card_back)
+            self.text_buffer_back    = text_view_back.get_buffer()
+            self.text_buffer_back.set_text(self.sub_list_store_back[path][1])
+            self.text_buffer_back.connect('changed', self.editing_card_back)
 
         except IndexError:
             pass
 
-    def editing_card(self, text_buffer):
-        path = self.selected_row.get_selected_rows()[1][0]
-        self.sub_list_store[path][1] = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
+    def editingCard(self, text_buffer): 
+        path                            = self.selected_row.get_selected_rows()[1][0]
+        self.sub_list_store[path][1]    = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
 
     def editing_card_back(self, text_buffer):
-        path = self.selected_row.get_selected_rows()[1][0]
-        self.sub_list_store_back[path][1] = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
+        path                                = self.selected_row.get_selected_rows()[1][0]
+        self.sub_list_store_back[path][1]   = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
+
+    def on_toolbar_button_clicked(self, widget, tag):
+        bounds_front    = self.text_buffer_front.get_selection_bounds()
+        bounds_back     = self.text_buffer_back.get_selection_bounds()
+
+        if len(bounds_front) != 0:
+
+            (start, end)        = bounds_front
+            selection_front      = self.text_buffer_front.get_text(start, end, True)
+            get_insert_front     = self.text_buffer_front.get_insert()
+
+            self.text_buffer_front.delete(start, end)
+
+            iter_front           = self.text_buffer_front.get_iter_at_mark(get_insert_front)
+            self.text_buffer_front.insert(iter_front, tag[0] + selection_front + tag[1])
+
+        if len(bounds_back) != 0:
+            (start, end) = bounds_back
+            selection_back      = self.text_buffer_back.get_text(start, end, True)
+            get_insert_back     = self.text_buffer_back.get_insert()
+
+            self.text_buffer_back.delete(start, end)
+
+            iter_back           = self.text_buffer_back.get_iter_at_mark(get_insert_back)
+            self.text_buffer_back.insert(iter_back, tag[0] + selection_back + tag[1])
 
     def on_cell_video_toggled(self, widget, path):
         if self.sub_list_store[path][5]:
@@ -612,7 +612,6 @@ class Handler(object):
         progress_bar.set_show_text(False)
         progress_bar.set_fraction(0)
         anki_open_window.show_all()
-
 
         self.current = 0
 
