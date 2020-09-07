@@ -1,12 +1,16 @@
-from os import environ, mkdir, path, remove, sys, system
-from glob import glob
-from anki import Collection as aopen
-from gi.repository import GLib
+from os                 import environ, mkdir, path, remove, sys, system
+from glob               import glob
+from anki               import Collection as aopen
+
+from gi                 import require_version
+require_version('Gtk', '3.0')
+from gi.repository      import GLib
+from gi.repository.Gtk  import TextBuffer
 
 sys.path.append(path.abspath('pylib/pyasstosrt'))
 sys.path.append(path.abspath('pylib/pysrt'))
-from pysrt import open as popen
-from pyasstosrt import Subtitle
+from pysrt              import open as popen
+from pyasstosrt         import Subtitle
 
 def createCacheDirIfItNotExists():
     if not path.exists(path.abspath('data')):
@@ -139,4 +143,32 @@ def subExtractReturnTuple(opened_sub_tupled):
         return final_tuple
 
     return ()
+
+def serializeIt(text_buffer, tmp_string=None):
+    if tmp_string:
+        text_buffer.set_text(tmp_string)
+        tmp_start_iter  = text_buffer.get_start_iter()
+        tmp_end_iter    = text_buffer.get_end_iter()
+        tmp_format      = text_buffer.register_serialize_tagset()
+        tmp_exported    = text_buffer.serialize( text_buffer,
+                                                 tmp_format,
+                                                 tmp_start_iter,
+                                                 tmp_end_iter )
+        return tmp_exported
+    else:
+        start_iter  = text_buffer.get_start_iter()
+        end_iter    = text_buffer.get_end_iter()
+        format      = text_buffer.register_serialize_tagset()
+        exported    = text_buffer.serialize( text_buffer,
+                                             format,
+                                             start_iter,
+                                             end_iter )
+        return exported
+
+def deserializeIt(text_buffer, exported):
+    text_buffer.set_text('')
+    text_buffer.deserialize(text_buffer,
+                            text_buffer.register_deserialize_tagset(),
+                            text_buffer.get_start_iter(),
+                            exported )
 

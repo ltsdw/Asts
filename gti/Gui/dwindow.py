@@ -1,13 +1,14 @@
 from gi import require_version
 require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk, GLib, Pango
-from os import path, system
-from anki import Collection as aopen
-from anki.rsbackend import DBError
-from threading import Thread
+
+from gi.repository      import Gtk, Gdk, GLib, Pango
+from os                 import path, system
+from anki               import Collection as aopen
+from anki.rsbackend     import DBError
+from threading          import Thread
 from concurrent.futures import ThreadPoolExecutor
-from multiprocessing import Manager, Lock
-from uuid import uuid1
+from multiprocessing    import Manager, Lock
+from uuid               import uuid1
 
 from ..Funcs import (
         checkIfIsCollection,
@@ -20,14 +21,16 @@ from ..Funcs import (
         createCacheDirIfItNotExists,
         cut,
         giveMe1Tuple,
-        #makeCards,
         openSubFile,
         subExtractReturnTuple,
-        writeRecentUsedCached
-)
+        writeRecentUsedCached,
+        serializeIt,
+        deserializeIt,
+        PangoToHtml
+        )
 
-glade_file = path.join((path.abspath('gti/Gui/glade')) + '/' + 'gui_final.glade')
-builder = Gtk.Builder()
+glade_file  = path.join((path.abspath('gti/Gui/glade')) + '/' + 'gui_final.glade')
+builder     = Gtk.Builder()
 builder.add_from_file(glade_file)
 
 class MyThread(Thread):
@@ -165,7 +168,7 @@ class Handler(object):
                 list_cache = f.read().split('\n')
             self.collection_file.set_filename(list_cache[0])
             self.deck_name_entry.set_text(list_cache[1])
-        except:
+        except FileNotFoundError:
             pass
 
         self.button = builder.get_object('proceed_action')
@@ -243,8 +246,12 @@ class Handler(object):
         self.video_sub_file_optional.unselect_all()
 
     def on_proceed_action_clicked(self, *args):
+        text_view_front                 = builder.get_object('text_view_front') 
+        text_view_back                  = builder.get_object('text_view_back')
         self.conclude_process_button    = builder.get_object('conclude_process')
         self.search_entry               = builder.get_object('search_entry')
+        self.text_buffer_front          = text_view_front.get_buffer()
+        self.text_buffer_back           = text_view_back.get_buffer()
 
         self.coll_filename          = self.collection_file.get_filename()
         self.vid_filename           = self.video_file.get_filename()
@@ -256,11 +263,16 @@ class Handler(object):
         self.sub_tree_view          = builder.get_object('sub_tree_view')
         self.sub_list_store         = Gtk.ListStore(int, str, str, str, bool, bool, bool)
 
+        writeRecentUsedCached(self.coll_filename, self.deck_name)
+
         #   Despite of  the only values that are importante in self.sub_list_store_back
         # are the first value (int) and the second value (str)
         # but I need populate it with the other values because the fuction return them, but on the back
         # it doesn't have any use.
         self.sub_list_store_back = Gtk.ListStore(int, str, str, str, bool, bool, bool)
+
+        self.selected_row = self.sub_tree_view.get_selection()
+        self.selected_row.connect("changed", self.item_selected)
 
         #   Checking if is the first time that is window is generated
         # this prevent drawing duplicated elements
@@ -273,11 +285,7 @@ class Handler(object):
                     path_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
                     path_column.set_fixed_width(520)
                     path_column.set_min_width(520)
-                path_column.set_sort_column_id(i)
                 self.sub_tree_view.append_column(path_column)
-
-            self.selected_row = self.sub_tree_view.get_selection()
-            self.selected_row.connect("changed", self.item_selected)
 
             # cell video, audio and snapshot to toggle
             self.renderer_video_toggle = Gtk.CellRendererToggle()
@@ -296,18 +304,57 @@ class Handler(object):
             self.renderer_snapshot_toggle.connect("toggled", self.on_cell_snapshot_toggled)
 
             # Toolbar
-            self.tag_underline          = ('<u>', '</u>')
-            text_view_front             = builder.get_object('text_view_front')
-            self.text_buffer_front      = text_view_front.get_buffer()
-            #self.tag_underline          = self.text_buffer_front.create_tag('underline', underline=Pango.Underline.SINGLE)
-            self.toolbar                = builder.get_object('toolbar')
-            self.button_underline       = Gtk.ToolButton()
-            self.button_underline.set_icon_name('format-text-underline-symbolic')
-            self.toolbar.insert(self.button_underline, 0)
-            self.button_underline.connect('clicked', self.on_toolbar_button_clicked, self.tag_underline)
+            toolbar                = builder.get_object('toolbar')
+
+            toolbar.insert(Gtk.SeparatorToolItem(), 0)
+
+            self.set_color_button   = Gtk.ToolButton()
+            self.set_color_button.set_icon_name('gtk-select-color')
+            toolbar.insert(self.set_color_button, 1)
+
+            tool_item_color_button  = Gtk.ToolItem()
+            color_button            = Gtk.ColorButton()
+            tool_item_color_button.add(color_button)
+            toolbar.insert(tool_item_color_button, 2)
+            self.set_color_button.connect('clicked', self.on_toolbar_color_button_clicked)
+
+            toolbar.insert(Gtk.SeparatorToolItem(), 3)
+
+            tag_underline_front     = self.text_buffer_front.create_tag('underline',    underline=Pango.Underline.SINGLE)
+            tag_bold_front          = self.text_buffer_front.create_tag('bold',         weight=Pango.Weight.BOLD)
+            tag_italic_front        = self.text_buffer_front.create_tag('italic',       style=Pango.Style.ITALIC)
+
+            tag_underline_back      = self.text_buffer_back.create_tag('underline',     underline=Pango.Underline.SINGLE)
+            tag_bold_back           = self.text_buffer_back.create_tag('bold',          weight=Pango.Weight.BOLD)
+            tag_italic_back         = self.text_buffer_back.create_tag('italic',        style=Pango.Style.ITALIC)
+
+            button_underline        = Gtk.ToolButton()
+            button_underline.set_icon_name('format-text-underline-symbolic')
+            toolbar.insert(button_underline, 4)
+            button_underline.connect('clicked', self.on_toolbar_tag_button_clicked, tag_underline_front, tag_underline_back)
+
+            button_bold             = Gtk.ToolButton()
+            button_bold.set_icon_name('format-text-bold-symbolic')
+            toolbar.insert(button_bold, 5)
+            button_bold.connect('clicked', self.on_toolbar_tag_button_clicked, tag_bold_front, tag_bold_back)
+
+            button_italic           = Gtk.ToolButton()
+            button_italic.set_icon_name('format-text-italic-symbolic')
+            toolbar.insert(button_italic, 6)
+            button_italic.connect('clicked', self.on_toolbar_tag_button_clicked, tag_italic_front, tag_italic_back)
+
+            toolbar.insert(Gtk.SeparatorToolItem(), 7)
+
+            button_remove_all_tags  = Gtk.ToolButton()
+            button_remove_all_tags.set_icon_name('edit-clear-symbolic')
+            toolbar.insert(button_remove_all_tags, 8)
+            button_remove_all_tags.connect('clicked', self.on_button_remove_all_tags_clicked)
+
+            toolbar.insert(Gtk.SeparatorToolItem(), 9)
 
         ### From here everything is generated even if the window is hided
         for i in range(len(self.open_sub_file)):
+
             if subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])):
                 self.sub_list_store.append(subExtractReturnTuple(giveMe1Tuple(self.open_sub_file[i])))
 
@@ -329,73 +376,159 @@ class Handler(object):
         # setting the model after all the lists are already populated
         self.sub_tree_view.set_model(self.sub_list_store)
 
-        writeRecentUsedCached(self.coll_filename, self.deck_name)
-        self.second_window.show_all()
-
         #   The key value need to be a string to be used correctly when the value of 'path' is passed to the dictionary
         # otherwise if the 'key' is a int() the value will be assign at wrong place when passed 'path' as a key, even though the path value is correct
-        self.dict_any = {str(key): False for key in range(len(self.sub_list_store))}
-        self.any_toggled = False
+        self.dict_any       = {str(key): False for key in range(len(self.sub_list_store))}
+        self.any_toggled    = False
 
-        # Tags
-        #self.dict_any_tags = {str(key): (None, False) for key in range(len(self.sub_list_store))}
+        # dictionary to track the tags
+        self.dict_any_change_front  =   {str(key): [serializeIt(text_buffer=self.text_buffer_front, tmp_string=value[1]), ''] \
+                                        for key, value in enumerate(self.sub_list_store)}
+        self.dict_any_change_back   =   {str(key): [serializeIt(text_buffer=self.text_buffer_back, tmp_string=value[1]), ''] \
+                                        for key, value in enumerate(self.sub_list_store_back)}
+        self.second_window.show_all()
+        self.contador = 0
 
+        # Sensitive to the conclude_process_button
         GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
 
         self.search_entry.connect('changed', self.searchIt)
 
     def item_selected(self, *args):
-        #   Need this try/except to silent a indexerror that will occur case the second window close and if opened again,
-        # merely cosmetic as it will always occur, just select any row and all good.
-        #   The get_selected_rows()[1] will return a empty list at first try when reopening the second window, I just don't know why
+        #   Silencing a indexerror that will occur in case the window was hided and rised again
+        # it is not important, can be ignored
 
         try:
-            iter_start_front        = self.text_buffer_front.get_start_iter()
-            iter_end_front          = self.text_buffer_front.get_end_iter()
-            path                    = self.selected_row.get_selected_rows()[1][0]
-            self.text_buffer_front.set_text(self.sub_list_store[path][1])
+            path                    = str(self.selected_row.get_selected_rows()[1][0])
+            exported_front          = self.dict_any_change_front[path][0] 
+            exported_back           = self.dict_any_change_back[path][0]
+
+            deserializeIt(self.text_buffer_front, exported_front)
+            deserializeIt(self.text_buffer_back, exported_back)
             self.text_buffer_front.connect('changed', self.editingCard)
-            
-            text_view_back      = builder.get_object('text_view_back')
-            self.text_buffer_back    = text_view_back.get_buffer()
-            self.text_buffer_back.set_text(self.sub_list_store_back[path][1])
-            self.text_buffer_back.connect('changed', self.editing_card_back)
+            self.text_buffer_back.connect('changed', self.editingCardBack)
 
         except IndexError:
             pass
 
-    def editingCard(self, text_buffer): 
-        path                            = self.selected_row.get_selected_rows()[1][0]
-        self.sub_list_store[path][1]    = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
+    def editingCard(self, text_buffer_front):
+        #   Silencing a indexerror that will occur in case the window was hided and rised again
+        # it is not important, can be ignored
+        try:
+            path                                        = self.selected_row.get_selected_rows()[1][0]
+            start_iter_front                            = text_buffer_front.get_start_iter()
+            end_iter_front                              = text_buffer_front.get_end_iter() 
+            self.sub_list_store[path][1]                = text_buffer_front.get_text(start_iter_front, end_iter_front, True)
+            exported                                    = serializeIt(text_buffer=text_buffer_front)
+            self.dict_any_change_front[str(path)][0]    = exported
 
-    def editing_card_back(self, text_buffer):
-        path                                = self.selected_row.get_selected_rows()[1][0]
-        self.sub_list_store_back[path][1]   = text_buffer.get_text(text_buffer.get_start_iter(), text_buffer.get_end_iter(), True)
+        except IndexError:
+            pass
 
-    def on_toolbar_button_clicked(self, widget, tag):
-        bounds_front    = self.text_buffer_front.get_selection_bounds()
-        bounds_back     = self.text_buffer_back.get_selection_bounds()
+    def editingCardBack(self, text_buffer_back):
+        #   Silencing a indexerror that will occur in case the window was hided and rised again
+        # it is not important, can be ignored
+        try:
+            path                                        = self.selected_row.get_selected_rows()[1][0]
+            start_iter_back                             = text_buffer_back.get_start_iter()
+            end_iter_back                               = text_buffer_back.get_end_iter() 
+            self.sub_list_store_back[path][1]           = text_buffer_back.get_text(start_iter_back, end_iter_back, True)
+            exported                                    = serializeIt(text_buffer=text_buffer_back)
+            self.dict_any_change_back[str(path)][0]     = exported
+        except IndexError:
+            pass
 
-        if len(bounds_front) != 0:
+    def on_toolbar_color_button_clicked(self, widget):
+        #   Silencing a indexerror that will occur in case the window was hided and rised again
+        # it is not important, can be ignored
+        try:
+            path        = str(self.selected_row.get_selected_rows()[1][0])
+            
+            color           = self.color_button.get_color().to_string()
+            bounds_front    = self.text_buffer_front.get_selection_bounds()
+            bounds_back     = self.text_buffer_back.get_selection_bounds()
+            tag_table_front = self.text_buffer_front.get_tag_table()
+            tag_table_back  = self.text_buffer_back.get_tag_table()
 
-            (start, end)        = bounds_front
-            selection_front      = self.text_buffer_front.get_text(start, end, True)
-            get_insert_front     = self.text_buffer_front.get_insert()
+            ##### FRONT
+            if len(bounds_front) != 0:
+                (start, end)        = bounds_front
+                selection_front     = self.text_buffer_front.get_text(start, end, True)
+                get_insert_front    = self.text_buffer_front.get_insert()
 
-            self.text_buffer_front.delete(start, end)
+                if not tag_table_front.lookup(color):
+                    tag_front       = self.text_buffer_front.create_tag(color, foreground=color)
+                    self.text_buffer_front.apply_tag(tag_front, start, end)
+                else:
+                    self.text_buffer_front.apply_tag_by_name(color, start, end)
 
-            iter_front           = self.text_buffer_front.get_iter_at_mark(get_insert_front)
-            self.text_buffer_front.insert(iter_front, tag[0] + selection_front + tag[1])
+                exported                                = serializeIt(text_buffer=self.text_buffer_front)
+                self.dict_any_change_front[path][0]        = exported
+                
+                p = PangoToHtml()
+                p.feed(exported)
 
-        if len(bounds_back) != 0:
-            (start, end) = bounds_back
-            selection_back      = self.text_buffer_back.get_text(start, end, True)
-            get_insert_back     = self.text_buffer_back.get_insert()
+            ###### BACK
+            if len(bounds_back) != 0:
+                (start, end)        = bounds_back
+                selection_back      = self.text_buffer_back.get_text(start, end, True)
+                get_insert_back     = self.text_buffer_back.get_insert()
 
-            self.text_buffer_back.delete(start, end)
+                if not tag_table_back.lookup(color):
+                    tag_back       = self.text_buffer_back.create_tag(color, foreground=color)
+                    self.text_buffer_back.apply_tag(tag_back, start, end)
+                else:
+                    self.text_buffer_back.apply_tag_by_name(color, start, end)
 
-            iter_back           = self.text_buffer_back.get_iter_at_mark(get_insert_back)
-            self.text_buffer_back.insert(iter_back, tag[0] + selection_back + tag[1])
+                exported                                = serializeIt(text_buffer=self.text_buffer_back)
+                self.dict_any_change_back[str(path)][0] = exported
+
+        except IndexError:
+            pass
+
+    def on_toolbar_tag_button_clicked(self, widget, tag_front, tag_back):
+        #   Silencing a indexerror that will occur in case the window was hided and rised again
+        # it is not important, can be ignored
+        try:
+            path        = str(self.selected_row.get_selected_rows()[1][0])
+
+            bounds_front    = self.text_buffer_front.get_selection_bounds()
+            bounds_back     = self.text_buffer_back.get_selection_bounds()
+
+            ##### FRONT
+            if len(bounds_front) != 0:
+                (start, end)        = bounds_front
+                selection_front     = self.text_buffer_front.get_text(start, end, True)
+                get_insert_front    = self.text_buffer_front.get_insert()
+
+                self.text_buffer_front.apply_tag(tag_front, start, end)
+
+                exported                            = serializeIt(text_buffer=self.text_buffer_front)
+                self.dict_any_change_front[path][0] = exported
+
+            ###### BACK
+            if len(bounds_back) != 0:
+                (start, end)        = bounds_back
+                selection_back      = self.text_buffer_back.get_text(start, end, True)
+                get_insert_back     = self.text_buffer_back.get_insert()
+
+                self.text_buffer_back.apply_tag(tag_back, start, end)
+
+                exported                            = serializeIt(text_buffer=self.text_buffer_back)
+                self.dict_any_change_back[path][0]  = exported
+
+        except IndexError:
+            pass
+
+    def on_button_remove_all_tags_clicked(self, widget):
+        start_iter_front    = self.text_buffer_front.get_start_iter()
+        end_iter_front      = self.text_buffer_front.get_end_iter()
+
+        start_iter_back     = self.text_buffer_back.get_start_iter()
+        end_iter_back       = self.text_buffer_back.get_end_iter()
+
+        self.text_buffer_front.remove_all_tags(start_iter_front, end_iter_front)
+        self.text_buffer_back.remove_all_tags(start_iter_back, end_iter_back)
 
     def on_cell_video_toggled(self, widget, path):
         if self.sub_list_store[path][5]:
@@ -505,34 +638,37 @@ class Handler(object):
     def tupleMedias(self, sub_list_store, sub_list_store_back):
         self.tuple_of_sentences = ()
         self.tuple_of_medias    = ()
+        p                       = PangoToHtml()
         for i in range(len(self.sub_list_store)):
             if self.sub_list_store[i][4] or self.sub_list_store[i][5] or self.sub_list_store[i][6]:
                 #   A unique id for each media, some images will conflict if it has the same name as a image
                 # on anki media collection
-                uuid_media = uuid1().int
+                text_front  = p.feed(self.dict_any_change_front[str(i)][0])
+                text_back   = p.feed(self.dict_any_change_back[str(i)][0])
+                uuid_media  = uuid1().int
                 self.tuple_of_medias = self.tuple_of_medias + ( tuple([uuid_media] + self.sub_list_store[i][1:]),)
 
                 if self.sub_list_store[i][4] and self.sub_list_store[i][6]:
-                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
-                                                                            self.sub_list_store_back[i][1],
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  text_front,
+                                                                            text_back,
                                                                             f'{uuid_media}.mp4',
                                                                             f'{uuid_media}.bmp'),)
                 elif self.sub_list_store[i][5] and self.sub_list_store[i][6]:
-                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
-                                                                            self.sub_list_store_back[i][1],
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  text_front,
+                                                                            text_back,
                                                                             f'{uuid_media}.mp3',
                                                                             f'{uuid_media}.bmp'),)
                 elif self.sub_list_store[i][4] and not self.sub_list_store[i][6]:
-                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
-                                                                            self.sub_list_store_back[i][1],
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  text_front,
+                                                                            text_back,
                                                                             f'{uuid_media}.mp4'),)
                 elif self.sub_list_store[i][5] and not self.sub_list_store[i][6]:
-                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
-                                                                            self.sub_list_store_back[i][1],
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  text_front,
+                                                                            text_back,
                                                                             f'{uuid_media}.mp3'),)
                 else:
-                    self.tuple_of_sentences = self.tuple_of_sentences + ((  self.sub_list_store[i][1],
-                                                                            self.sub_list_store_back[i][1],
+                    self.tuple_of_sentences = self.tuple_of_sentences + ((  text_front,
+                                                                            text_back,
                                                                             f'{uuid_media}.bmp'),)
 
     def setSensitiveConcludeProcess(self, *args):
