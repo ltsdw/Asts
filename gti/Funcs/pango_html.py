@@ -43,6 +43,19 @@ class PangoToHtml(HTMLParser):
                                             "foreground-gdk":                   (r'<font color="{}">', "</font>"),
                                             }
 
+    @staticmethod
+    def pango_to_html_hex(val: str) -> str:
+        """Convert 32 bit Pango color hex string to 16 html.
+        Pango string have the format 'ffff:ffff:ffff' (for white).
+        These values get truncated to 16 bits per color into a single string:
+        '#FFFFFF'.
+        """
+        red, green, blue = val.split(":")
+        red = hex(255 * int(red, base=16) // 65535)[2:].zfill(2)
+        green = hex(255 * int(green, base=16) // 65535)[2:].zfill(2)
+        blue = hex(255 * int(blue, base=16) // 65535)[2:].zfill(2)
+        return f"#{red}{green}{blue}"
+
     def feed(self, data: bytes) -> str:
         """Convert a buffer (text and and the buffer's iterators to html string.
 
@@ -87,7 +100,9 @@ class PangoToHtml(HTMLParser):
             if vtype == "GdkColor":  # Convert colours to html
                 if name in ['foreground-gdk', 'background-gdk']:
                     opening, closing = self.tag2html[name]
-                    hex_color   = value.replace(':', '')
+                    #hex_color   = value.replace(':', '')
+                    hex_color   = self.pango_to_html_hex(value)
+                    print(hex_color)
                     opening     = opening.format(hex_color)
                 else:
                     continue  # no idea!
