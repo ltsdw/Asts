@@ -465,9 +465,6 @@ class Handler(object):
                 exported                                = serializeIt(text_buffer=self.text_buffer_front)
                 self.dict_any_change_front[path][0]        = exported
                 
-                p = PangoToHtml()
-                p.feed(exported)
-
             ###### BACK
             if len(bounds_back) != 0:
                 (start, end)        = bounds_back

@@ -100,9 +100,7 @@ class PangoToHtml(HTMLParser):
             if vtype == "GdkColor":  # Convert colours to html
                 if name in ['foreground-gdk', 'background-gdk']:
                     opening, closing = self.tag2html[name]
-                    #hex_color   = value.replace(':', '')
                     hex_color   = self.pango_to_html_hex(value)
-                    print(hex_color)
                     opening     = opening.format(hex_color)
                 else:
                     continue  # no idea!
