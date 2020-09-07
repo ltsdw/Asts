@@ -85,7 +85,7 @@ class PangoToHtml(HTMLParser):
         root            = fromstring(tags)
         tags_name       = list(root.iter('tag'))
         tags_attributes = list(root.iter('attr'))
-        tags            = [ [tag_name, tag_attribute] for tag_name, tag_attribute in zip(tags_name, tags_attributes)]
+        tags            = [ [tag_name, tag_attribute] for tag_name, tag_attribute in zip(tags_name, tags_attributes) ]
 
         tags_list = {}
         for tag in tags:
@@ -98,10 +98,10 @@ class PangoToHtml(HTMLParser):
             name        = tag[1].attrib['name']
 
             if vtype == "GdkColor":  # Convert colours to html
-                if name in ['foreground-gdk', 'background-gdk']:
-                    opening, closing = self.tag2html[name]
-                    hex_color   = self.pango_to_html_hex(value)
-                    opening     = opening.format(hex_color)
+                if name == 'foreground-gdk':
+                    opening, closing    = self.tag2html[name]
+                    hex_color           = self.pango_to_html_hex(value)
+                    opening             = opening.format(hex_color)
                 else:
                     continue  # no idea!
             else:
