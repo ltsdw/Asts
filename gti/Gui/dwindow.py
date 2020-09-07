@@ -382,12 +382,11 @@ class Handler(object):
         self.any_toggled    = False
 
         # dictionary to track the tags
-        self.dict_any_change_front  =   {str(key): [serializeIt(text_buffer=self.text_buffer_front, tmp_string=value[1]), ''] \
+        self.dict_any_change_front  =   {str(key): serializeIt(text_buffer=self.text_buffer_front, tmp_string=value[1]) \
                                         for key, value in enumerate(self.sub_list_store)}
-        self.dict_any_change_back   =   {str(key): [serializeIt(text_buffer=self.text_buffer_back, tmp_string=value[1]), ''] \
+        self.dict_any_change_back   =   {str(key): serializeIt(text_buffer=self.text_buffer_back, tmp_string=value[1]) \
                                         for key, value in enumerate(self.sub_list_store_back)}
         self.second_window.show_all()
-        self.contador = 0
 
         # Sensitive to the conclude_process_button
         GLib.timeout_add(300, self.setSensitiveConcludeProcess, None)
@@ -401,8 +400,8 @@ class Handler(object):
         try:
             path                    = str(self.selected_row.get_selected_rows()[1][0])
 
-            deserializeIt(self.text_buffer_front, self.dict_any_change_front[path][0])
-            deserializeIt(self.text_buffer_back, self.dict_any_change_back[path][0])
+            deserializeIt(self.text_buffer_front, self.dict_any_change_front[path])
+            deserializeIt(self.text_buffer_back, self.dict_any_change_back[path])
             self.text_buffer_front.connect('changed', self.editingCard)
             self.text_buffer_back.connect('changed', self.editingCardBack)
 
@@ -418,7 +417,7 @@ class Handler(object):
             end_iter_front                              = text_buffer_front.get_end_iter() 
             self.sub_list_store[path][1]                = text_buffer_front.get_text(start_iter_front, end_iter_front, True)
 
-            self.dict_any_change_front[str(path)][0]    = serializeIt(text_buffer=text_buffer_front)
+            self.dict_any_change_front[str(path)]       = serializeIt(text_buffer=text_buffer_front)
 
         except IndexError:
             pass
@@ -432,7 +431,7 @@ class Handler(object):
             end_iter_back                               = text_buffer_back.get_end_iter() 
             self.sub_list_store_back[path][1]           = text_buffer_back.get_text(start_iter_back, end_iter_back, True)
 
-            self.dict_any_change_back[str(path)][0]     = serializeIt(text_buffer=text_buffer_back)
+            self.dict_any_change_back[str(path)]        = serializeIt(text_buffer=text_buffer_back)
 
         except IndexError:
             pass
@@ -461,7 +460,7 @@ class Handler(object):
                 else:
                     self.text_buffer_front.apply_tag_by_name(color, start, end)
     
-                self.dict_any_change_front[path][0] = serializeIt(text_buffer=self.text_buffer_front)
+                self.dict_any_change_front[path] = serializeIt(text_buffer=self.text_buffer_front)
 
             ###### BACK
             if len(bounds_back) != 0:
@@ -475,7 +474,7 @@ class Handler(object):
                 else:
                     self.text_buffer_back.apply_tag_by_name(color, start, end)
 
-                self.dict_any_change_back[path][0] = serializeIt(text_buffer=self.text_buffer_back)
+                self.dict_any_change_back[path] = serializeIt(text_buffer=self.text_buffer_back)
 
         except IndexError:
             pass
@@ -497,7 +496,7 @@ class Handler(object):
 
                 self.text_buffer_front.apply_tag(tag_front, start, end)
 
-                self.dict_any_change_front[path][0] = serializeIt(text_buffer=self.text_buffer_front)
+                self.dict_any_change_front[path] = serializeIt(text_buffer=self.text_buffer_front)
 
             ###### BACK
             if len(bounds_back) != 0:
@@ -507,7 +506,7 @@ class Handler(object):
 
                 self.text_buffer_back.apply_tag(tag_back, start, end)
 
-                self.dict_any_change_back[path][0]  = serializeIt(text_buffer=self.text_buffer_back)
+                self.dict_any_change_back[path] = serializeIt(text_buffer=self.text_buffer_back)
 
         except IndexError:
             pass
@@ -634,10 +633,11 @@ class Handler(object):
         for i in range(len(self.sub_list_store)):
             if self.sub_list_store[i][4] or self.sub_list_store[i][5] or self.sub_list_store[i][6]:
                 #   A unique id for each media, some images will conflict if it has the same name as a image
-                # on anki media collection
-                text_front  = p.feed(self.dict_any_change_front[str(i)][0])
-                text_back   = p.feed(self.dict_any_change_back[str(i)][0])
+                # on anki media collection 
                 uuid_media  = uuid1().int
+
+                text_front  = p.feed(self.dict_any_change_front[str(i)])
+                text_back   = p.feed(self.dict_any_change_back[str(i)])
                 self.tuple_of_medias = self.tuple_of_medias + ( tuple([uuid_media] + self.sub_list_store[i][1:]),)
 
                 if self.sub_list_store[i][4] and self.sub_list_store[i][6]:
