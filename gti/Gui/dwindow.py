@@ -400,11 +400,9 @@ class Handler(object):
 
         try:
             path                    = str(self.selected_row.get_selected_rows()[1][0])
-            exported_front          = self.dict_any_change_front[path][0] 
-            exported_back           = self.dict_any_change_back[path][0]
 
-            deserializeIt(self.text_buffer_front, exported_front)
-            deserializeIt(self.text_buffer_back, exported_back)
+            deserializeIt(self.text_buffer_front, self.dict_any_change_front[path][0])
+            deserializeIt(self.text_buffer_back, self.dict_any_change_back[path][0])
             self.text_buffer_front.connect('changed', self.editingCard)
             self.text_buffer_back.connect('changed', self.editingCardBack)
 
@@ -419,8 +417,8 @@ class Handler(object):
             start_iter_front                            = text_buffer_front.get_start_iter()
             end_iter_front                              = text_buffer_front.get_end_iter() 
             self.sub_list_store[path][1]                = text_buffer_front.get_text(start_iter_front, end_iter_front, True)
-            exported                                    = serializeIt(text_buffer=text_buffer_front)
-            self.dict_any_change_front[str(path)][0]    = exported
+
+            self.dict_any_change_front[str(path)][0] = serializeIt(text_buffer=text_buffer_front)
 
         except IndexError:
             pass
@@ -433,8 +431,9 @@ class Handler(object):
             start_iter_back                             = text_buffer_back.get_start_iter()
             end_iter_back                               = text_buffer_back.get_end_iter() 
             self.sub_list_store_back[path][1]           = text_buffer_back.get_text(start_iter_back, end_iter_back, True)
-            exported                                    = serializeIt(text_buffer=text_buffer_back)
-            self.dict_any_change_back[str(path)][0]     = exported
+
+            self.dict_any_change_back[str(path)][0]     = serializeIt(text_buffer=text_buffer_back)
+
         except IndexError:
             pass
 
@@ -461,10 +460,9 @@ class Handler(object):
                     self.text_buffer_front.apply_tag(tag_front, start, end)
                 else:
                     self.text_buffer_front.apply_tag_by_name(color, start, end)
+    
+                self.dict_any_change_front[path][0] = serializeIt(text_buffer=self.text_buffer_front)
 
-                exported                                = serializeIt(text_buffer=self.text_buffer_front)
-                self.dict_any_change_front[path][0]        = exported
-                
             ###### BACK
             if len(bounds_back) != 0:
                 (start, end)        = bounds_back
@@ -477,8 +475,7 @@ class Handler(object):
                 else:
                     self.text_buffer_back.apply_tag_by_name(color, start, end)
 
-                exported                                = serializeIt(text_buffer=self.text_buffer_back)
-                self.dict_any_change_back[str(path)][0] = exported
+                self.dict_any_change_back[path][0] = serializeIt(text_buffer=self.text_buffer_back)
 
         except IndexError:
             pass
@@ -500,8 +497,7 @@ class Handler(object):
 
                 self.text_buffer_front.apply_tag(tag_front, start, end)
 
-                exported                            = serializeIt(text_buffer=self.text_buffer_front)
-                self.dict_any_change_front[path][0] = exported
+                self.dict_any_change_front[path][0] = serializeIt(text_buffer=self.text_buffer_front)
 
             ###### BACK
             if len(bounds_back) != 0:
@@ -511,8 +507,7 @@ class Handler(object):
 
                 self.text_buffer_back.apply_tag(tag_back, start, end)
 
-                exported                            = serializeIt(text_buffer=self.text_buffer_back)
-                self.dict_any_change_back[path][0]  = exported
+                self.dict_any_change_back[path][0]  = serializeIt(text_buffer=self.text_buffer_back)
 
         except IndexError:
             pass
