@@ -308,15 +308,15 @@ class Handler(object):
 
             toolbar.insert(Gtk.SeparatorToolItem(), 0)
 
-            self.set_color_button   = Gtk.ToolButton()
-            self.set_color_button.set_icon_name('gtk-select-color')
-            toolbar.insert(self.set_color_button, 1)
+            set_color_button   = Gtk.ToolButton()
+            set_color_button.set_icon_name('gtk-select-color')
+            toolbar.insert(set_color_button, 1)
 
             tool_item_color_button  = Gtk.ToolItem()
-            color_button            = Gtk.ColorButton()
-            tool_item_color_button.add(color_button)
+            self.color_button       = Gtk.ColorButton()
+            tool_item_color_button.add(self.color_button)
             toolbar.insert(tool_item_color_button, 2)
-            self.set_color_button.connect('clicked', self.on_toolbar_color_button_clicked)
+            set_color_button.connect('clicked', self.on_toolbar_color_button_clicked)
 
             toolbar.insert(Gtk.SeparatorToolItem(), 3)
 
