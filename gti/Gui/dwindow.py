@@ -418,7 +418,7 @@ class Handler(object):
             end_iter_front                              = text_buffer_front.get_end_iter() 
             self.sub_list_store[path][1]                = text_buffer_front.get_text(start_iter_front, end_iter_front, True)
 
-            self.dict_any_change_front[str(path)][0] = serializeIt(text_buffer=text_buffer_front)
+            self.dict_any_change_front[str(path)][0]    = serializeIt(text_buffer=text_buffer_front)
 
         except IndexError:
             pass
@@ -441,7 +441,7 @@ class Handler(object):
         #   Silencing a indexerror that will occur in case the window was hided and rised again
         # it is not important, can be ignored
         try:
-            path        = str(self.selected_row.get_selected_rows()[1][0])
+            path            = str(self.selected_row.get_selected_rows()[1][0])
             
             color           = self.color_button.get_color().to_string()
             bounds_front    = self.text_buffer_front.get_selection_bounds()
