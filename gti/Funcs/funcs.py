@@ -74,7 +74,7 @@ def cut(input_file, tuple_of_filenames, lock, callback):
             cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -vf scale=640:-1 -async 1 {output_file}.mp4"
             system(cmd)
         if audio:
-            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -ss {start} -to {end} -map 0:a -b:a 320k {output_file}.mp3"
+            cmd = f"ffmpeg -v quiet -y -i '{input_file}' -vn -ss {start} -to {end} -b:a 320k {output_file}.mp3"
             system(cmd)
         if snapshot:
             cmd = f"ffmpeg -v quiet -y -ss {start} -i '{input_file}' -vsync 0 -vframes 1 -filter:v scale=640:-1 {output_file}.bmp"

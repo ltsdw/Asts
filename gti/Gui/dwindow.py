@@ -278,7 +278,7 @@ class Handler(object):
         # this prevent drawing duplicated elements
         if not self.second_window_hided:
 
-            for i, title in enumerate(['Indice', 'Dialog', 'Start', 'End']):
+            for i, title in enumerate(['Indice', 'Dialog']):
                 renderer = Gtk.CellRendererText()
                 path_column = Gtk.TreeViewColumn(title=title, cell_renderer=renderer, text=i)
                 if title == 'Dialog':
@@ -286,6 +286,18 @@ class Handler(object):
                     path_column.set_fixed_width(520)
                     path_column.set_min_width(520)
                 self.sub_tree_view.append_column(path_column)
+
+            # Making some cells editable 'Start' and 'End' respectivily
+            editable_start_field = Gtk.CellRendererText()
+            editable_end_field = Gtk.CellRendererText()
+            editable_start_field.set_property('editable', True)
+            editable_end_field.set_property('editable', True)
+            path_column_editable = Gtk.TreeViewColumn(title='Start', cell_renderer=editable_start_field, text=2)
+            self.sub_tree_view.append_column(path_column_editable)
+            path_column_editable = Gtk.TreeViewColumn(title='End', cell_renderer=editable_end_field, text=3)
+            self.sub_tree_view.append_column(path_column_editable)
+            editable_start_field.connect('edited', self.start_field)
+            editable_end_field.connect('edited', self.end_field)
 
             # cell video, audio and snapshot to toggle
             self.renderer_video_toggle = Gtk.CellRendererToggle()
@@ -435,6 +447,12 @@ class Handler(object):
 
         except IndexError:
             pass
+
+    def start_field(self, widget, path, text):
+        self.sub_list_store[path][2] = text
+
+    def end_field(self, widget, path, text):
+        self.sub_list_store[path][3] = text
 
     def on_toolbar_color_button_clicked(self, widget):
         #   Silencing a indexerror that will occur in case the window was hided and rised again
