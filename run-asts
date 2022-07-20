@@ -1,0 +1,7 @@
+#! /bin/env python
+
+from asts import MainApp
+
+if __name__ == '__main__':
+   MainApp().run()
+
