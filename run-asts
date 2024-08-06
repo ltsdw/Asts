@@ -1,4 +1,4 @@
-#! /bin/env python
+#! env/asts-env/bin/python3
 
 from asts import MainApp
 
