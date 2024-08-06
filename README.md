@@ -1,51 +1,52 @@
 # Asts
 Asts (Another subs to srs) is a simple tool used to create [Anki](http://ankisrs.net) cards inspired by [subs2srs](http://subs2srs.sourceforge.net/). It doesn't work on Windows yet.
 
-# Installing FFmpeg
+# Requirements
 
-Before using Asts ffmpeg must be installed and accessible at `$PATH` environment variable.
-It can be installed from the official site [Download FFmpeg](https://ffmpeg.org/download.html).
-Or it can be installed from via package manager from your distro.
+Pip and FFMPEG must be installed and visible through the `$PATH` environment variable.
+It can be installed from the official site [Pip installation](https://pip.pypa.io/en/stable/installation/) (pip most certainly is already installed) and [Download FFmpeg](https://ffmpeg.org/download.html), or they can be installed using the package manager from your distro.
 
 * Arch Linux:
    ```
-   sudo pacman -S ffmpeg
+   sudo pacman -S ffmpeg python-pip
    ```
 
 * Debian/Ubuntu
    ```
-   sudo apt install ffmpeg
+   sudo apt install ffmpeg python3-pip
    ```
 
-# Usage
+# How to install
 
-* 1 - Clone this repository:
+* Clone:
    ```
    git clone https://github.com/ltsdw/Asts.git
    ```
 
-* 2 - Change directory:
+* Change to the directory:
    ```
    cd Asts
    ```
 
-* 3 - Install the dependencies:
+* Install the dependencies (only needed once):
    ```
-   pip install -r requirements.txt
+   ./setup.sh
    ```
 
-* 4 - Run the run-asts:
+# How to use
+
+* Run:
    ```
    ./run-asts
    ```
 
-* 5 - Select the files needed:
+* Select the files needed:
    * A deck will be created if there is no deck with the name specified.
    * Generally the collection.anki2 file is under ~/.local/share/Anki2/<profile name>
 
    ![img-1](https://user-images.githubusercontent.com/44977415/139771271-b6fc7180-4e55-4587-b6a7-f1133b5dfd96.png)
 
-* 6 - Select and edit the cards that you want add:
+* Select and edit the cards that you want add:
    * Before adding cards certify that your anki is **closed**, it's **not possible** to add new cards while anki still open.
    * It's possible edit both sides (front and back) before adding a card.
 
@@ -53,10 +54,6 @@ Or it can be installed from via package manager from your distro.
 
 ## Anki Card Example (Front & Back)
    ![img-3](https://user-images.githubusercontent.com/44977415/139771380-7afbe41a-fef1-421e-a93f-2f1af9f8fb52.png)
-
-## Libraries
-   * [pysrt](https://github.com/byroot/pysrt): by [byroot](https://github.com/byroot), python parser for subrip (srt) files.
-   * [pyasstosrt](https://github.com/GitBib/pyasstosrt) under [Apache-2.0 License](https://github.com/GitBib/pyasstosrt/blob/master/LICENSE): by [GitBib](https://github.com/GitBib), convert sub station alpha (ass) subtitle to srt format.
 
 ## Related Projects
 
