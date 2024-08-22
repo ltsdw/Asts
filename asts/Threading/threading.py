@@ -1,4 +1,7 @@
-from anki import Collection, Note, DBError, NotetypeDict
+from anki.collection import Collection
+from anki.notes import Note
+from anki.errors import DBError
+from anki.models import NotetypeDict
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from gi.repository.GLib import idle_add
