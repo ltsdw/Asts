@@ -2,7 +2,6 @@ class TypeAliases:
     def __init__(self):
         from typing import List, Optional, Tuple, Union
 
-
         self.Command      = str
         self.Filename     = str
         self.Filepath     = str

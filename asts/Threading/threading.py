@@ -14,6 +14,7 @@ from asts.Gui         import AnkiDialog, CardsGenerator
 from asts.TypeAliases import *
 from asts.Utils       import clearCachedFiles, cut
 
+
 class ThreadingHandler(Thread):
     def __init__(self, handler: CardsGenerator, chunk_size: int = 5, nthreads: int = 2):
         super().__init__()
@@ -29,6 +30,7 @@ class ThreadingHandler(Thread):
         self._nthreads = nthreads
 
         self.start()
+
 
     @staticmethod
     def _createCard(
@@ -47,7 +49,7 @@ class ThreadingHandler(Thread):
         :param sentence_back: Optional phrase to the back of the card.
         :param media_video: Optional filename to a video media file.
         :param media_audio: Optional filename to an audio media file.
-        :param media_image: Optional filename to an image media file. 
+        :param media_image: Optional filename to an image media file.
         :return:
         """
 
@@ -71,11 +73,12 @@ class ThreadingHandler(Thread):
             card[card_front] = sentence_front
             card[card_back] = f'<img src="{media_image}">'  + '<br><br>' + sentence_back
 
+
     def _writeCard(self, tuple_sentence: Tuple[str, str, OptVideoFile, OptMp3File, OptMbpFile], lock: Lock) -> None:
         """
         Create write a new card to the anki.collection.
         Can raise exception StopAsyncIteration in case of cancelling tasks.
-         
+
         :param tuple_sentence: A tuple that contain info about constructing a front/back card.
         :param lock: Lock the process until it finish it's work.
         :return:
@@ -85,16 +88,15 @@ class ThreadingHandler(Thread):
         # we need to lock here to ensure that no more than one card
         # it's being write, otherwise DBError will be raised
         with lock:
-            video: OptVideoFile         = None
-            audio: OptMp3File           = None
-            image: OptMbpFile           = None
+            video: OptVideoFile      = None
+            audio: OptMp3File        = None
+            image: OptMbpFile        = None
             media_video: OptFilename = None
             media_audio: OptFilename = None
             media_image: OptFilename = None
 
             sentence_front: str
             sentence_back: str
-
 
             (sentence_front, sentence_back, video, audio, image) = tuple_sentence
 
@@ -114,6 +116,7 @@ class ThreadingHandler(Thread):
             self._deck.addNote( card )
             self._deck.save()
 
+
     def _cutMedias(self, vid_filename: Filename, list_of_medias: List[List[Info]]) -> None:
         """
         Cut the clip selected to be used at the creation of cards.
@@ -123,8 +126,8 @@ class ThreadingHandler(Thread):
         :return:
         """
 
-        chunked_medias: List[List[List[Info]]] = [ 
-            list_of_medias[i : (i + self._chunk_size)] 
+        chunked_medias: List[List[List[Info]]] = [
+            list_of_medias[i : (i + self._chunk_size)]
             for i in range(0, len(list_of_medias), self._chunk_size)
         ]
 
@@ -145,8 +148,9 @@ class ThreadingHandler(Thread):
                     else:
                         return
 
+
     def _prepareCards(
-        self, 
+        self,
         coll_filename: Filename,
         deck_name: str,
         list_of_sentences:
@@ -161,7 +165,7 @@ class ThreadingHandler(Thread):
         ]
     ) -> None:
         """
-        Setup info to create anki cards. 
+        Setup info to create anki cards.
 
         :param coll_filename: Path to the anki.collection.
         :param list_of_sentences: A list with info about the sentences to be constructed.
@@ -182,11 +186,17 @@ class ThreadingHandler(Thread):
         self._deck.models.save( model )
         self._deck.models.set_current( model )
 
-        chunked_senteces: List[List[Tuple[str,
-                                          str,
-                                          OptVideoFile,
-                                          OptMp3File,
-                                          OptMbpFile]]] = [
+        chunked_senteces: List[
+            List[
+                Tuple[
+                    str,
+                    str,
+                    OptVideoFile,
+                    OptMp3File,
+                    OptMbpFile
+                ]
+            ]
+        ] = [
 
             list_of_sentences[i : (i + self._chunk_size)]
 
@@ -207,6 +217,7 @@ class ThreadingHandler(Thread):
                     else:
                         return
 
+
     def _cleaning(self) -> None:
         """
         Clear the files used to create cards and close the deck.
@@ -226,16 +237,18 @@ class ThreadingHandler(Thread):
 
         clearCachedFiles()
 
+
     def _dbErrorDialog(self) -> None:
         """
         Display a dialog indicating the Anki database is opened.
 
         :return:
         """
- 
+
         idle_add(self._handler.resetProgressbar)
 
         idle_add(AnkiDialog(self._handler).showAll)
+
 
     def run(self) -> None:
         """
@@ -251,7 +264,7 @@ class ThreadingHandler(Thread):
 
         try:
             self._prepareCards(self._handler.getCollection(), self._handler.getDeckName(), self._handler.getListOfSentences())
- 
+
         #This will call a function that will draw a dialog window case anki is already opened
         except DBError:
             self._dbErrorDialog()

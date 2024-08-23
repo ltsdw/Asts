@@ -1,13 +1,11 @@
-"""This script is a rebased version of this one here: 
+"""This script is a rebased version of this one here:
 https://github.com/thinkle/gourmet/blob/master/gourmet/gtk_extras/pango_html.py
 I'm not the author of this. All credits to Cydanil.
 """
 
 from html.parser import HTMLParser
-from typing import Dict, List, Optional, Tuple
-
+from typing import Dict, List, Tuple
 from xml.etree.ElementTree  import fromstring
-
 from gi.repository import Pango
 
 
@@ -99,13 +97,13 @@ class PangoToHtml(HTMLParser):
 
             tag_name    = tag[0].attrib['name']
             vtype       = tag[1].attrib['type']
-            value       = tag[1].attrib['value'] 
+            value       = tag[1].attrib['value']
             name        = tag[1].attrib['name']
 
             if vtype == "GdkColor":  # Convert colours to html
                 if name in ['foreground-gdk', 'background-gdk']:
                     opening, closing = self.tag2html[name]
-                    
+
                     if name == 'background-gdk':
                         hex_color = self.pango_to_html_hex(value, True)
                     else:
@@ -137,6 +135,7 @@ class PangoToHtml(HTMLParser):
 
         return self.markup_text
 
+
     def handle_starttag(self, tag: str, attrs: List[Tuple[str, str]]) -> None:
         # The only tag in pango markup is "apply_tag". This could be ignored or
         # made an assert, but we let our parser quietly handle nonsense.
@@ -151,11 +150,13 @@ class PangoToHtml(HTMLParser):
                 self.current_opening_tags.append(opening_tag)
                 self.current_closing_tags.append(closing_tag)
 
+
     def handle_data(self, data: str) -> None:
         data = ''.join(self.current_opening_tags) + data
         self.current_opening_tags.clear()
 
         self.markup_text += data
+
 
     def handle_endtag(self, tag: str) -> None:
         if self.current_closing_tags:  # Can be empty due to pop in handle_data

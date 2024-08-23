@@ -1,56 +1,25 @@
 from __future__ import annotations
-
+from re import compile, Pattern
 from typing             import Dict, List, Optional, Tuple
 from concurrent.futures import Future
 
 from gi import require_version
-
 require_version('Gtk', '3.0')
-
 from gi.repository.Gtk import (
-    Align,
-    Application,
-    Box,
-    Button,
-    CellRendererText,
-    CellRendererToggle,
-    CheckButton,
-    ColorButton,
-    Grid,
-    Label,
-    ListStore,
-    Orientation,
-    ProgressBar,
-    ScrolledWindow,
-    SearchEntry,
-    SeparatorToolItem,
-    TextBuffer,
-    TextIter,
-    TextMark,
-    TextTag,
-    TextTagTable,
-    TextView,
-    Toolbar,
-    ToolButton,
-    ToolItem,
-    TreePath,
-    TreeSelection,
-    TreeView,
-    TreeViewColumn,
-    TreeViewColumnSizing,
-    TreeViewGridLines,
-    Window
+    Align, Application, Box, Button, CellRendererText,
+    CellRendererToggle, CheckButton, ColorButton, Grid, Label,
+    ListStore, Orientation, ProgressBar, ScrolledWindow, SearchEntry,
+    SeparatorToolItem, TextBuffer, TextIter, TextMark, TextTag, TextTagTable,
+    TextView, Toolbar, ToolButton, ToolItem, TreePath, TreeSelection,
+    TreeView, TreeViewColumn, TreeViewColumnSizing, TreeViewGridLines, Window
 )
 
 from gi.repository.GLib import idle_add, timeout_add
-
 from gi.repository.Pango import Style, Underline, Weight
 
 from asts.Utils import (
-    deserializeIt,
-    extractAllDialogues,
-    serializeIt,
-    setMargin
+    deserializeIt, extractAllDialogues,
+    serializeIt, setMargin
 )
 
 from asts.TypeAliases import *
@@ -132,6 +101,7 @@ class CardsGenerator(Window):
         # depends on these.
         self._futures_list: List[Future]
 
+
     def showAll(self) -> None:
         """
         Draws the cards generator window and it's respective widgets.
@@ -169,7 +139,7 @@ class CardsGenerator(Window):
         # sets up the sentence editing related (e.g toolbar, tagging, etc)
         self._setSentenceRelated()
 
-        # all color tags are named as it's respective values
+        # all color tags are named as its respective values
         self._color_tag_names = [
             '#9999c1c1f1f1', '#6262a0a0eaea', '#35358484e4e4', '#1c1c7171d8d8', '#1a1a5f5fb4b4',
             '#8f8ff0f0a4a4', '#5757e3e38989', '#3333d1d17a7a', '#2e2ec2c27e7e', '#2626a2a26969',
@@ -197,6 +167,7 @@ class CardsGenerator(Window):
 
         self.show_all()
 
+
     def _resetFuturesLists(self) -> None:
         """
         Assign a empty list of both lists of futures (futures_setences and futures_medias).
@@ -205,6 +176,7 @@ class CardsGenerator(Window):
         """
 
         self._futures_list = []
+
 
     def _setSearchEntry(self) -> None:
         """
@@ -222,6 +194,7 @@ class CardsGenerator(Window):
 
         search_entry.connect('changed', self.searchIt)
 
+
     def searchIt(self, search_entry: SearchEntry) -> None:
         """
         Searchs over the _subtitles_liststore.
@@ -236,6 +209,7 @@ class CardsGenerator(Window):
                 self._subtitles_treeview.set_cursor(i)
                 break
 
+
     def _setSelectAll(self) -> None:
         """
         Sets up widgets to select all sentences.
@@ -248,51 +222,46 @@ class CardsGenerator(Window):
         self._subtitles_grid.attach(grid, 0, 2, 1, 1)
 
         lbl: Label = Label(label='Select all')
-        setMargin(lbl, 5)
 
+        setMargin(lbl, 5)
         grid.attach(lbl, 0, 0, 1, 1)
 
         all_vid_toggle: CheckButton = CheckButton()
+
         all_vid_toggle.set_halign(Align.CENTER)
         all_vid_toggle.connect('toggled', self._onAllVideosToggled)
-
         setMargin(all_vid_toggle, 5)
-
         grid.attach(all_vid_toggle, 1, 0, 1, 1)
 
         lbl2: Label = Label(label='Videos')
 
         setMargin(lbl2, 5)
-
         grid.attach(lbl2, 1, 1, 1, 1)
 
         all_audio_toggle: CheckButton = CheckButton()
+
         all_audio_toggle.set_halign(Align.CENTER)
         all_audio_toggle.connect('toggled', self._onAllAudiosToggled, all_vid_toggle)
-
         setMargin(all_audio_toggle, 5)
-
         grid.attach(all_audio_toggle, 2, 0, 1, 1)
 
         lbl3: Label = Label(label='Audios')
 
         setMargin(lbl3, 5)
-
         grid.attach(lbl3, 2, 1, 1, 1)
 
         all_img_toggle: CheckButton = CheckButton()
+
         all_img_toggle.set_halign(Align.CENTER)
         all_img_toggle.connect('toggled', self._onAllImagesToggled)
-
         setMargin(all_img_toggle, 5)
-
         grid.attach(all_img_toggle, 3, 0, 1, 1)
-        
+
         lbl4: Label = Label(label='Snapshot')
 
         setMargin(lbl4, 5)
-
         grid.attach(lbl4, 3, 1, 1, 1)
+
 
     def _onAllVideosToggled(self, _) -> None:
         """
@@ -324,6 +293,7 @@ class CardsGenerator(Window):
         else:
             self._any_media_toggled = False
 
+
     def _onAllAudiosToggled(self, _) -> None:
         """
         Handle the toggled event for the ToggleButton object.
@@ -353,6 +323,7 @@ class CardsGenerator(Window):
         else:
             self._any_media_toggled = False
 
+
     def _onAllImagesToggled(self, _) -> None:
         """
         Handle the toggled event for the ToggleButton object.
@@ -377,6 +348,7 @@ class CardsGenerator(Window):
         else:
             self._any_media_toggled = False
 
+
     def _initDictionariesTag(self) -> None:
         """
         Init the default values for the used tags.
@@ -396,6 +368,7 @@ class CardsGenerator(Window):
               for key, value in enumerate(self._subtitles_liststore_back)
             }
         )
+
 
     def _populateListStore(self) -> None:
         """
@@ -439,6 +412,7 @@ class CardsGenerator(Window):
             for i in range(len(dialogues_list)):
                 self._subtitles_liststore_back.append((i, '', '', '', False, False, False))
 
+
     def _setTimerCells(self) -> None:
         """
         Arrange the start and end timer cells.
@@ -463,6 +437,7 @@ class CardsGenerator(Window):
         editable_start_field.connect('edited', self._startFieldEdited)
         editable_end_field.connect('edited', self._endFieldEdited)
 
+
     def _startFieldEdited(self, _, path: TreePath, text: str) -> None:
         """
         Handle the edited event for the start timer field cell.
@@ -473,14 +448,12 @@ class CardsGenerator(Window):
         :return:
         """
 
-        from re import compile, Pattern
-
-
         regex_timer: Pattern[str] = compile(r'([0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9])')
         result = regex_timer.findall(text)
 
         if result:
             self._subtitles_liststore[path][2] = result[0]
+
 
     def _endFieldEdited(self, _, path: TreePath, text: str) -> None:
         """
@@ -492,14 +465,12 @@ class CardsGenerator(Window):
         :return:
         """
 
-        from re import compile, Pattern
-
-
         regex_timer: Pattern[str] = compile(r'([0-9]?[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9])')
         result: List[str] = regex_timer.findall(text)
 
         if result:
             self._subtitles_liststore[path][3] = result[0]
+
 
     def _setDialogCells(self) -> None:
         """
@@ -517,6 +488,7 @@ class CardsGenerator(Window):
                 path_column.set_fixed_width(520)
                 path_column.set_min_width(520)
             self._subtitles_treeview.append_column(path_column)
+
 
     def _setMediasCells(self) -> None:
         """
@@ -541,10 +513,11 @@ class CardsGenerator(Window):
         self._subtitles_treeview.append_column(column_toggle)
         renderer_snapshot_toggle.connect("toggled", self._onCellImageToggled)
 
+
     def _onCellVideoToggled(self, _, path) -> None:
         """
         Handles the toggled event for the CellRendererToggle object.
-        
+
         :param widget: CellRendererToggle object.
         :path path: TreePath object.
         :return:
@@ -553,15 +526,13 @@ class CardsGenerator(Window):
         if self._subtitles_liststore[path][5]:
 
             self._subtitles_liststore[path][5] = not self._subtitles_liststore[path][5]
-            self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4] 
+            self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4]
             self._dict_any_media[path]         = self._subtitles_liststore[path][4]
-
         elif self._subtitles_liststore[path][6]:
 
             self._subtitles_liststore[path][6] = not self._subtitles_liststore[path][6]
             self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4]
             self._dict_any_media[path]         = self._subtitles_liststore[path][4]
-
         else:
             self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4]
             self._dict_any_media[path]         = self._subtitles_liststore[path][4]
@@ -571,10 +542,11 @@ class CardsGenerator(Window):
         else:
             self._any_media_toggled = False
 
+
     def _onCellAudioToggled(self, _, path: str) -> None:
         """
         Handles the toggled event for the CellRendererToggle object.
-        
+
         :param widget: CellRendererToggle object.
         :path path: TreePath object.
         :return:
@@ -583,14 +555,12 @@ class CardsGenerator(Window):
         if self._subtitles_liststore[path][4]:
 
             self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4]
-            self._subtitles_liststore[path][5] = not self._subtitles_liststore[path][5] 
+            self._subtitles_liststore[path][5] = not self._subtitles_liststore[path][5]
             self._dict_any_media[path]         = self._subtitles_liststore[path][5]
-
         elif self._subtitles_liststore[path][5] and self._subtitles_liststore[path][6]:
 
             self._subtitles_liststore[path][5] = not self._subtitles_liststore[path][5]
             self._dict_any_media[path]         = self._subtitles_liststore[path][6]
-
         else:
             self._subtitles_liststore[path][5] = not self._subtitles_liststore[path][5]
             self._dict_any_media[path]         = self._subtitles_liststore[path][5]
@@ -600,26 +570,23 @@ class CardsGenerator(Window):
         else:
             self._any_media_toggled = False
 
+
     def _onCellImageToggled(self, _, path: str) -> None:
         """
         Handles the toggled event for the CellRendererToggle object.
-        
+
         :param widget: CellRendererToggle object.
         :path path: TreePath object.
         :return:
         """
 
         if self._subtitles_liststore[path][4]:
-
             self._subtitles_liststore[path][4] = not self._subtitles_liststore[path][4]
-            self._subtitles_liststore[path][6] = not self._subtitles_liststore[path][6] 
+            self._subtitles_liststore[path][6] = not self._subtitles_liststore[path][6]
             self._dict_any_media[path]         = self._subtitles_liststore[path][6]
-
         elif self._subtitles_liststore[path][6] and self._subtitles_liststore[path][5]:
-
             self._subtitles_liststore[path][6] = not self._subtitles_liststore[path][6]
             self._dict_any_media[path]         = self._subtitles_liststore[path][5]
-
         else:
             self._subtitles_liststore[path][6] = not self._subtitles_liststore[path][6]
             self._dict_any_media[path]         = self._subtitles_liststore[path][6]
@@ -628,6 +595,7 @@ class CardsGenerator(Window):
             self._any_media_toggled = True
         else:
             self._any_media_toggled = False
+
 
     def _setSubtitleTreeView(self) -> None:
         """
@@ -635,17 +603,16 @@ class CardsGenerator(Window):
 
         :return:
         """
- 
+
         self._subtitles_treeview = TreeView()
         self._subtitles_treeview.set_grid_lines(TreeViewGridLines.BOTH)
 
         scrl_wnd: ScrolledWindow = ScrolledWindow()
         scrl_wnd.set_hexpand(True)
         scrl_wnd.set_vexpand(True)
-
         scrl_wnd.add(self._subtitles_treeview)
-
         self._subtitles_grid.attach(scrl_wnd, 0, 1, 1, 1)
+
 
     def _itemSelected(self, _) -> None:
         """
@@ -662,6 +629,7 @@ class CardsGenerator(Window):
         self._textbuffer_front.connect('changed', self._editingCard)
         self._textbuffer_back.connect('changed', self._editingCardBack)
 
+
     def _editingCard(self, textbuffer_front: TextBuffer) -> None:
         """
         Keeps track of changes at the text_buffer_front.
@@ -677,6 +645,7 @@ class CardsGenerator(Window):
 
         self._dict_any_change_front[path.to_string()] = serializeIt(text_buffer=textbuffer_front)
 
+
     def _editingCardBack(self, textbuffer_back: TextBuffer) -> None:
         """
         Keeps track of changes at the text_buffer_back.
@@ -687,10 +656,11 @@ class CardsGenerator(Window):
 
         path: TreePath                          = self._selected_row.get_selected_rows()[1][0]
         start_iter_back: TextIter               = textbuffer_back.get_start_iter()
-        end_iter_back: TextIter                 = textbuffer_back.get_end_iter() 
+        end_iter_back: TextIter                 = textbuffer_back.get_end_iter()
         self._subtitles_liststore_back[path][1] = textbuffer_back.get_text(start_iter_back, end_iter_back, True)
 
         self._dict_any_change_back[path.to_string()] = serializeIt(text_buffer=textbuffer_back)
+
 
     def _setSentenceRelated(self) -> None:
         """
@@ -705,36 +675,35 @@ class CardsGenerator(Window):
         self._main_box.pack_start(box, False, True, 0)
 
         box.set_orientation(Orientation.VERTICAL)
-
         setMargin(box, 5)
 
         toolbar: Toolbar = Toolbar()
 
         box.pack_start(toolbar, False, True, 0)
-
         toolbar.set_halign(Align.END)
         setMargin(toolbar, 5)
 
         lbl: Label = Label()
+
         lbl.set_markup('<i><b>Front</b></i>')
-
         box.pack_start(lbl, False, True, 0)
-
         lbl.set_halign(Align.START)
         setMargin(lbl, 5)
 
         scrl_wnd: ScrolledWindow = ScrolledWindow()
+
         scrl_wnd.set_hexpand(True)
         scrl_wnd.set_vexpand(True)
 
         textview: TextView = TextView()
-        scrl_wnd.add(textview)
 
+        scrl_wnd.add(textview)
         box.pack_start(scrl_wnd, False, True, 0)
 
         self._textbuffer_front = textview.get_buffer()
 
         lbl2: Label = Label()
+
         lbl2.set_halign(Align.START)
         lbl2.set_markup('<i><b>Back</b></i>')
 
@@ -742,28 +711,26 @@ class CardsGenerator(Window):
         setMargin(lbl2, 5)
 
         scrl_wnd2: ScrolledWindow = ScrolledWindow()
+
         scrl_wnd2.set_hexpand(True)
         scrl_wnd2.set_vexpand(True)
 
         textview2: TextView = TextView()
-        scrl_wnd2.add(textview2)
 
+        scrl_wnd2.add(textview2)
         box.pack_end(scrl_wnd2, False, True, 0)
 
         self._textbuffer_back = textview2.get_buffer()
 
         # this depends on the text buffer to be initialized
         self._setToolbarColorButton(toolbar)
-
         toolbar.insert(SeparatorToolItem(), 3)
-
         self._setToolbarUnderlineButton(toolbar)
         self._setToolbarBoldButton(toolbar)
         self._setToolbarItalicButton(toolbar)
-
         toolbar.insert(SeparatorToolItem(), 7)
-
         self._setToolbarTagRemoverButton(toolbar)
+
 
     def _setToolbarColorButton(self, toolbar: Toolbar) -> None:
         """
@@ -778,12 +745,12 @@ class CardsGenerator(Window):
         toolbar.insert(set_color_button, 1)
 
         tool_item_color_button: ToolItem= ToolItem()
-        color_button                    = ColorButton()
+        color_button: ColorButton       = ColorButton()
 
         tool_item_color_button.add(color_button)
         toolbar.insert(tool_item_color_button, 2)
-
         set_color_button.connect('clicked', self._onToolbarColorBtnClicked, color_button)
+
 
     def _setToolbarUnderlineButton(self, toolbar: Toolbar) -> None:
         """
@@ -802,6 +769,7 @@ class CardsGenerator(Window):
 
         button_underline.connect('clicked', self._onToolbarTagBtnClicked, tag_underline_front, tag_underline_back)
 
+
     def _setToolbarBoldButton(self, toolbar: Toolbar) -> None:
         """
         Sets up the bold button from the toolbar.
@@ -818,6 +786,7 @@ class CardsGenerator(Window):
         toolbar.insert(button_bold, 5)
 
         button_bold.connect('clicked', self._onToolbarTagBtnClicked, tag_bold_front, tag_bold_back)
+
 
     def _setToolbarItalicButton(self, toolbar: Toolbar) -> None:
         """
@@ -836,6 +805,7 @@ class CardsGenerator(Window):
 
         button_italic.connect('clicked', self._onToolbarTagBtnClicked, tag_italic_front, tag_italic_back)
 
+
     def _setToolbarTagRemoverButton(self, toolbar: Toolbar) -> None:
         """
         Sets up the tag remover button from the toolbar.
@@ -848,8 +818,8 @@ class CardsGenerator(Window):
 
         button_remove_all_tags.set_icon_name('edit-clear-symbolic')
         toolbar.insert(button_remove_all_tags, 8)
-
         button_remove_all_tags.connect('clicked', lambda _: self._removeAllTagsFromSelection())
+
 
     def _getBounds(self) -> Tuple[TextMark, TextMark, Optional[str]]:
         """
@@ -871,6 +841,7 @@ class CardsGenerator(Window):
         bounds_back: TextMark = self._textbuffer_back.get_selection_bounds()
 
         return (bounds_front, bounds_back, path)
+
 
     def _onToolbarColorBtnClicked(
             self,
@@ -935,13 +906,15 @@ class CardsGenerator(Window):
 
             self._dict_any_change_back[path] = serializeIt(text_buffer=self._textbuffer_back)
 
+
     def _onToolbarTagBtnClicked(
-            self,
-            _,
-            tag_front: TextTag,
-            tag_back: TextTag) -> None:
+        self,
+        _,
+        tag_front: TextTag,
+        tag_back: TextTag
+    ) -> None:
         """
-        Handles the clicked event for the tool button. 
+        Handles the clicked event for the tool button.
 
         :param widget: ToolButton object.
         :param tag_front: TextTag object.
@@ -976,6 +949,7 @@ class CardsGenerator(Window):
 
             self._dict_any_change_back[path] = serializeIt(text_buffer=self._textbuffer_back)
 
+
     def _removeAllTagsFromSelection(self, color_tags: bool = False) -> None:
         """
         Remove all tags from the current selected text.
@@ -1009,7 +983,7 @@ class CardsGenerator(Window):
                         self._textbuffer_front.remove_tag_by_name(c, start, end)
             else:
                 self._textbuffer_front.remove_all_tags(start, end)
-        
+
             self._dict_any_change_front[path] = serializeIt(text_buffer=self._textbuffer_front)
 
         ### BACK
@@ -1022,8 +996,9 @@ class CardsGenerator(Window):
                         self._textbuffer_back.remove_tag_by_name(c, start, end)
             else:
                 self._textbuffer_back.remove_all_tags(start, end)
- 
+
             self._dict_any_change_back[path] = serializeIt(text_buffer=self._textbuffer_back)
+
 
     def _setProgressBar(self) -> None:
         """
@@ -1033,12 +1008,11 @@ class CardsGenerator(Window):
         """
 
         self._cur_progress = 0
-
         self._progress_bar = ProgressBar()
 
         setMargin(self._progress_bar, 5)
-
         self._main_box.pack_start(self._progress_bar, False, True, 0)
+
 
     def _setButtons(self) -> None:
         """
@@ -1050,27 +1024,24 @@ class CardsGenerator(Window):
         box: Box = Box()
 
         self._main_box.pack_end(box, False, True, 0)
-
         box.set_halign(Align.CENTER)
         box.set_orientation(Orientation.HORIZONTAL)
-
         setMargin(box, 5)
 
         self._cancel_btn = Button(label='Cancel')
 
         box.pack_start(self._cancel_btn, False, True, 0)
-
         setMargin(self._cancel_btn, 5, 5, 100, 5)
         self._cancel_btn.connect('clicked', self._onCancelBtnClicked)
 
         self._generate_btn = Button(label='Generate')
 
         box.pack_end(self._generate_btn, False, True, 0)
-
         setMargin(self._generate_btn, 100, 5, 5, 5)
         self._generate_btn.connect('clicked', self._onGenerateBtnClicked)
 
         timeout_add(300, self._setSensitiveGenerateBtn)
+
 
     def _setSensitiveGenerateBtn(self) -> bool:
         """
@@ -1088,6 +1059,7 @@ class CardsGenerator(Window):
 
         return True
 
+
     def _allFuturesDone(self) -> bool:
         """
         Check for the status of futures.
@@ -1100,11 +1072,12 @@ class CardsGenerator(Window):
 
         return True
 
+
     def _updateProgress(self) -> bool:
         """
         Keep track of the objects yet to be completed.
         Updates the progress bar.
-        
+
         :param future: Parameter passed by add_done_callback.
         :return: a boolean to signal whether idle_add should remove it from list event.
         """
@@ -1133,15 +1106,17 @@ class CardsGenerator(Window):
         self._progress_bar.set_fraction(self._cur_progress)
         self._progress_bar.set_show_text(False)
 
+
     def idleaddUpdateProgress(self, _) -> None:
         """
         Call idle_add to call updateProgress.
-        
+
         :param future: Optional future object.
         :return:
         """
 
         idle_add(self._updateProgress)
+
 
     def getCancelTaskStatus(self) -> bool:
         """
@@ -1152,6 +1127,7 @@ class CardsGenerator(Window):
 
         return self._cancel_task
 
+
     def setCancelTaskStatus(self, status: bool) -> None:
         """
         Set the status for the cancel_task.
@@ -1161,10 +1137,11 @@ class CardsGenerator(Window):
 
         self._cancel_task = status
 
+
     def _idleaddUpdateProgress(self, _) -> None:
         """
         Call idle_add to call updateProgress.
-        
+
         :param future: Optional future object.
         :return:
         """
@@ -1215,6 +1192,7 @@ class CardsGenerator(Window):
         self._cur_progress = 0
         self._progress_bar.set_fraction(self._cur_progress)
 
+
     def _onGenerateBtnClicked(self, _) -> None:
         """
         Handle the click event for the generate_btn.
@@ -1224,10 +1202,9 @@ class CardsGenerator(Window):
 
         from asts.Threading import ThreadingHandler
 
-
         self._listMediasSentences()
-
         ThreadingHandler(self)
+
 
     def _listMediasSentences(self) -> None:
         """
@@ -1235,11 +1212,9 @@ class CardsGenerator(Window):
 
         :return:
         """
-        
+
         from uuid import uuid1
-
         from asts.Utils import PangoToHtml
-
 
         # case other tasks already had been scheduled
         self._resetFuturesLists()
@@ -1252,7 +1227,7 @@ class CardsGenerator(Window):
         for i in range(len(self._subtitles_liststore)):
             if self._subtitles_liststore[i][4] or self._subtitles_liststore[i][5] or self._subtitles_liststore[i][6]:
                 # a unique id for each media, some images will conflict if it has the same name as a image
-                # on anki media collection 
+                # on anki media collection
                 uuid_media  = uuid1().int
 
                 text_front: str  = p.feed(self._dict_any_change_front[str(i)])
@@ -1303,6 +1278,7 @@ class CardsGenerator(Window):
 
         self._max_tasks = len(self._list_info_medias) + len(self._list_of_sentences)
 
+
     def getCollection(self) -> Filename:
         """
         Returns the filename for the anki2.collection.
@@ -1311,6 +1287,7 @@ class CardsGenerator(Window):
         """
 
         return self._collection_filename
+
 
     def getDeckName(self) -> str:
         """
@@ -1321,6 +1298,7 @@ class CardsGenerator(Window):
 
         return self._deck_name
 
+
     def getVideoFilename(self) -> Filename:
         """
         Returns the name of the video file.
@@ -1329,6 +1307,7 @@ class CardsGenerator(Window):
         """
 
         return self._video_filename
+
 
     def getListInfoMedias(self) -> List[List[Info]]:
         """
@@ -1339,6 +1318,7 @@ class CardsGenerator(Window):
 
         return self._list_info_medias
 
+
     def getListOfSentences(self) -> ListSentences:
         """
         Returns a List with information about each sentence to be used at creating cards.
@@ -1347,6 +1327,7 @@ class CardsGenerator(Window):
         """
 
         return self._list_of_sentences
+
 
     def appendFuture(self, future: Future) -> None:
         """

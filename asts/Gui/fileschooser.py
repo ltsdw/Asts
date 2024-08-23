@@ -3,10 +3,7 @@ from os     import path
 from typing import List, Optional
 
 from gi     import require_version
-
 require_version('GdkPixbuf', '2.0')
-
-from gi.repository.Gdk       import RGBA
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository.GLib      import Error as GLib_Error
 from gi.repository.GLib      import timeout_add
@@ -14,32 +11,17 @@ from gi.repository.GLib      import timeout_add
 require_version('Gtk', '3.0')
 
 from gi.repository.Gtk import (
-    Align,
-    Application,
-    Box,
-    Button,
-    Entry,
-    FileChooser,
-    FileChooserButton,
-    FileFilter,
-    Grid,
-    Label,
-    Image,
-    Orientation,
-    StateFlags,
-    Window
+    Align, Application, Box, Button, Entry,
+    FileChooser, FileChooserButton, FileFilter,
+    Grid, Label, Image, Orientation, Window
 )
 
 from asts.Gui           import CardsGenerator
 from asts.TypeAliases   import Filename, Filepath
 
 from asts.Utils         import (
-    clearCachedFiles,
-    createCacheDirIfItNotExists,
-    isCollection,
-    isSub,
-    isVideo,
-    recentUsedFiles,
+    clearCachedFiles, createCacheDirIfItNotExists,
+    isCollection, isSub, isVideo, recentUsedFiles,
     setMargin
 )
 
@@ -54,7 +36,7 @@ class FileType(IntEnum):
 class FilesChooser(Window):
     def __init__(self, app: Application):
         super().__init__(title='Asts', application=app)
-        
+
         self._app: Application = app
 
         self.set_default_size(1000, 700)
@@ -96,6 +78,7 @@ class FilesChooser(Window):
 
         self.add(self._box)
 
+
     def _setLabels(self) -> None:
         """
         Setup the labels for the grid.
@@ -117,6 +100,7 @@ class FilesChooser(Window):
             # Grid.attach(child, left, top, width, height)
             self._fst_grid.attach(lbl, 0, idx, 1, 1)
 
+
     def _setFileChoosers(self) -> List[FileChooser]:
         """
         Set up the file choosers for the grid.
@@ -135,14 +119,15 @@ class FilesChooser(Window):
             f_c.set_halign(Align.FILL)
 
             self._fst_grid.attach(f_c, 1, idx, 1, 1)
-        
+
         return f_cs
+
 
     def _setFilters(self) -> None:
         """
         Set a filter for each file chooser.
 
-        :return: 
+        :return:
         """
 
         ff1: FileFilter = FileFilter()
@@ -195,6 +180,7 @@ class FilesChooser(Window):
         except FileNotFoundError:
             pass
 
+
     def _setButtonsSignals(self) -> None:
         """
         Set up the buttons and their respective signals for both grids.
@@ -207,7 +193,6 @@ class FilesChooser(Window):
         """
 
         del_img: Optional[Pixbuf]
-
         img_path: Filepath = path.join(path.dirname(__file__), "..", 'Icons/delete.png')
 
         try:
@@ -216,7 +201,6 @@ class FilesChooser(Window):
             exit(f'{img_path} file not found. Failed to create pixbuf.')
 
         icons: List[Optional[Image]] = [ Image().new_from_pixbuf(del_img) for _ in range(4) ]
-
         btns: List[Button] = [ Button() for _ in range(4) ]
 
         for (idx, btn) in enumerate(btns):
@@ -256,7 +240,6 @@ class FilesChooser(Window):
         cancel_btn.set_margin_bottom(10)
         cancel_btn.connect('clicked', lambda _: self.close())
 
-
         self._next_btn = Button(label='Next')
 
         box.pack_end(self._next_btn, False, True, 0)
@@ -264,9 +247,9 @@ class FilesChooser(Window):
         setMargin(self._next_btn, 200, 10, 0, 0)
         self._next_btn.connect('clicked', self._onNextBtnClicked)
 
-        
         timeout_add(300, self._setSensitiveNextBtn)
         timeout_add(300, self._checkInvalidSelection)
+
 
     def _setTextEntry(self) -> None:
         """
@@ -281,6 +264,7 @@ class FilesChooser(Window):
 
         self._fst_grid.attach(self._entry, 1, 4, 1, 1)
 
+
     def _getFilename(self, f_type: FileType) -> Optional[str]:
         """
         Return the name of the file.
@@ -294,6 +278,7 @@ class FilesChooser(Window):
         except IndexError:
             return None
 
+
     def _getDeckName(self) -> str:
         """
         Gets the deck name.
@@ -302,6 +287,7 @@ class FilesChooser(Window):
         """
 
         return self._entry.get_text()
+
 
     def _checkInvalidSelection(self) -> bool:
         """
@@ -317,7 +303,7 @@ class FilesChooser(Window):
 
         if col != None and not isCollection(col):
             self._fc_s[0].unselect_all()
-        
+
         if vid != None and not isVideo(vid):
             self._fc_s[1].unselect_all()
 
@@ -328,6 +314,7 @@ class FilesChooser(Window):
             self._fc_s[3].unselect_all()
 
         return True
+
 
     def _setSensitiveNextBtn(self) -> bool:
         """
@@ -348,6 +335,7 @@ class FilesChooser(Window):
 
         return True
 
+
     def _onNextBtnClicked(self, _) -> None:
         """
         Opens the generator of anki cards.
@@ -356,7 +344,6 @@ class FilesChooser(Window):
         """
 
         createCacheDirIfItNotExists()
-
         clearCachedFiles()
 
         recentUsedFiles(

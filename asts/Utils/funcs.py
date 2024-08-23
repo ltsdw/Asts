@@ -9,13 +9,7 @@ from pyasstosrt         import Subtitle, Dialogue
 from os                 import mkdir, path, remove, system
 from typing             import List, Optional, Union
 
-from asts.TypeAliases import (
-    Command,
-    Filename,
-    Filepath,
-    Info,
-    OptFilename
-)
+from asts.TypeAliases import Command, Filename, Filepath, Info, OptFilename
 
 
 def isCollection(collection_filename: OptFilename = None) -> bool:
@@ -32,6 +26,7 @@ def isCollection(collection_filename: OptFilename = None) -> bool:
 
     return False
 
+
 def isVideo(video_filename: OptFilename = None) -> bool:
     """
     Returns true if is a video file.
@@ -45,6 +40,7 @@ def isVideo(video_filename: OptFilename = None) -> bool:
             return True
 
     return False
+
 
 def isSub(sub_filename: OptFilename = None) -> bool:
     """
@@ -63,6 +59,7 @@ def isSub(sub_filename: OptFilename = None) -> bool:
 
     return False
 
+
 def createCacheDirIfItNotExists() -> None:
     """
     Create the directory used to cache files used to create cards.
@@ -78,6 +75,7 @@ def createCacheDirIfItNotExists() -> None:
 
     if not path.exists(path.abspath('data/cache/media')):
         mkdir('data/cache/media')
+
 
 def recentUsedFiles(
         anki_collection_filename: Filename,
@@ -95,6 +93,7 @@ def recentUsedFiles(
 
     with open(cache_dir + '/' + 'cached_usage.txt', 'w+') as f:
         f.write(data)
+
 
 def clearCachedFiles() -> None:
     """
@@ -115,6 +114,7 @@ def clearCachedFiles() -> None:
 
     except FileNotFoundError:
         pass
+
 
 def cut(input_file: Filename, media_info: List[Info]) -> None:
     """
@@ -148,6 +148,7 @@ def cut(input_file: Filename, media_info: List[Info]) -> None:
         cmd = f"ffmpeg -v quiet -y -ss {start} -i '{input_file}' -vsync 0 -vframes 1 -filter:v scale=640:-1 {output_file}.bmp"
         system(cmd)
 
+
 def _checkIfIsAss(sub_filename: OptFilename = None) -> bool:
     """
     Returns true if is a .ass subtitle file.
@@ -175,6 +176,7 @@ def _openSubFile(f_path: Filename) -> List[TextIOWrapper]:
 
     return popen(f_path)
 
+
 def _listDialogue(opened_sub_indexed: Union[SubRipItem, Dialogue]) -> List[str]:
     """
     Separete each items that form a dialogue into a list.
@@ -183,6 +185,7 @@ def _listDialogue(opened_sub_indexed: Union[SubRipItem, Dialogue]) -> List[str]:
     """
 
     return str(opened_sub_indexed).split('\n')
+
 
 def _extractDialogue(subtitle: List[str]) -> List[Info]:
     """
@@ -214,6 +217,7 @@ def _extractDialogue(subtitle: List[str]) -> List[Info]:
 
     return final_sub
 
+
 def extractAllDialogues(f_path: Filename) -> List[List[Info]]:
     """
     Returns all dialogues from f_path parsed.
@@ -232,6 +236,7 @@ def extractAllDialogues(f_path: Filename) -> List[List[Info]]:
             dialogues_list.append(dialogue)
 
     return dialogues_list
+
 
 def serializeIt(text_buffer: TextBuffer, tmp_string: Optional[str] = None) -> bytes:
     """
@@ -257,7 +262,6 @@ def serializeIt(text_buffer: TextBuffer, tmp_string: Optional[str] = None) -> by
         )
 
         return tmp_exported
-
     else:
         start_iter: TextIter    = text_buffer.get_start_iter()
         end_iter: TextIter      = text_buffer.get_end_iter()
@@ -271,6 +275,7 @@ def serializeIt(text_buffer: TextBuffer, tmp_string: Optional[str] = None) -> by
         )
 
         return exported
+
 
 def deserializeIt(text_buffer: TextBuffer, exported: bytes) -> None:
     """
@@ -297,6 +302,7 @@ def deserializeIt(text_buffer: TextBuffer, exported: bytes) -> None:
     # we delete it.
     end_iter: TextIter = text_buffer.get_end_iter()
     text_buffer.backspace(end_iter, False, True)
+
 
 def setMargin(
     widget: Widget,
