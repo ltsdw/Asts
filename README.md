@@ -42,7 +42,7 @@ It can be installed from the official site [Pip installation](https://pip.pypa.i
 
 * Select the files needed:
    * A deck will be created if there is no deck with the name specified.
-   * Generally the collection.anki2 file is under ~/.local/share/Anki2/<profile name>
+   * Generally the collection.anki2 file is under ~/.local/share/Anki2/*\<user name\>*/collection.anki2
 
    ![img-1](https://user-images.githubusercontent.com/44977415/139771271-b6fc7180-4e55-4587-b6a7-f1133b5dfd96.png)
 
