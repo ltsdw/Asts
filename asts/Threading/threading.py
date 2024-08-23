@@ -101,20 +101,18 @@ class ThreadingHandler(Thread):
             (sentence_front, sentence_back, video, audio, image) = tuple_sentence
 
             if video:
-                media_video = self._deck.media.addFile(self.cache_dir + '/' + video)
+                media_video = self._deck.media.add_file(self.cache_dir + '/' + video)
 
             if audio:
-                media_audio = self._deck.media.addFile(self.cache_dir + '/' + audio)
+                media_audio = self._deck.media.add_file(self.cache_dir + '/' + audio)
 
             if image:
-                media_image = self._deck.media.addFile(self.cache_dir + '/' + image)
+                media_image = self._deck.media.add_file(self.cache_dir + '/' + image)
 
             card: Note = self._deck.newNote()
 
             self._createCard(card, sentence_front, sentence_back, media_video, media_audio, media_image)
-
             self._deck.addNote( card )
-            self._deck.save()
 
 
     def _cutMedias(self, vid_filename: Filename, list_of_medias: List[List[Info]]) -> None:
