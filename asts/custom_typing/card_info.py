@@ -23,7 +23,7 @@ class CardInfoIndex(Enum):
     END_TIMESTAMP       = 3
     VIDEO_FILEPATH      = 4
     AUDIO_FILEPATH      = 5
-    IMAGE_FILEPATH   = 6
+    IMAGE_FILEPATH      = 6
     OUT_OF_INDEX        = 7
 
     def __index__(self) -> Literal[0, 1, 2, 3, 4, 5, 6, 7]:
