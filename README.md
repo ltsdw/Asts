@@ -50,10 +50,11 @@ It can be installed from the official site [Pip installation](https://pip.pypa.i
    * Before adding cards certify that your anki is **closed**, it's **not possible** to add new cards while anki still open.
    * It's possible edit both sides (front and back) before adding a card.
 
-   ![image2](https://github.com/user-attachments/assets/18318999-ad2d-4ff7-b7fd-5033e19004bc)
+   ![image3](https://github.com/user-attachments/assets/51040ce4-dba5-4d09-b6c0-f00e69a7c1c3)
 
 ## Anki Card Example (Front & Back)
-   ![image3](https://github.com/user-attachments/assets/51040ce4-dba5-4d09-b6c0-f00e69a7c1c3)
+   ![image2](https://github.com/user-attachments/assets/18318999-ad2d-4ff7-b7fd-5033e19004bc)
+   
 
 ## Related Projects
 
