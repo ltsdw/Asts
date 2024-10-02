@@ -280,12 +280,11 @@ class FilesChooserWindow(Window):
         """
 
         file_filter1: FileFilter = FileFilter()
+        file_filter2: FileFilter = FileFilter()
+        file_filter3: FileFilter = FileFilter()
+
         file_filter1.set_name('collection.anki2')
         file_filter1.add_pattern('*.anki2')
-
-        self._filechoosers_list[_FileChooserButtonIndex.ANKI2_COLLECTION].add_file_filter(file_filter1)
-
-        file_filter2: FileFilter = FileFilter()
         file_filter2.set_name('Video File')
         file_filter2.add_mime_type('video/mp4')
         file_filter2.add_mime_type('video/wmv')
@@ -297,14 +296,11 @@ class FilesChooserWindow(Window):
         file_filter2.add_pattern('*.avi')
         file_filter2.add_pattern('*.mkv')
         file_filter2.add_pattern('*.webm')
-
-        self._filechoosers_list[_FileChooserButtonIndex.VIDEO].add_file_filter(file_filter2)
-
-        file_filter3: FileFilter = FileFilter()
         file_filter3.set_name('Subtitles (ASS/SRT)')
         file_filter3.add_pattern('*.srt')
         file_filter3.add_pattern('*.ass')
-
+        self._filechoosers_list[_FileChooserButtonIndex.ANKI2_COLLECTION].add_file_filter(file_filter1)
+        self._filechoosers_list[_FileChooserButtonIndex.VIDEO].add_file_filter(file_filter2)
         self._filechoosers_list[_FileChooserButtonIndex.SUBTITLE].add_file_filter(file_filter3)
         self._filechoosers_list[_FileChooserButtonIndex.OPTIONAL_SUBTITLE].add_file_filter(file_filter3)
 
