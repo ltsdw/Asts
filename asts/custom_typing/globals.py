@@ -17,10 +17,12 @@ from os import path
 from typing import cast, Callable, Pattern
 from re import compile
 
+from asts.utils.core_utils import die
+
 
 # Default display
 __display: Display | None = Display.get_default()
-DISPLAY: Display = __display if __display else exit("Failed to get the default display, exiting...")
+DISPLAY: Display = __display if __display else die("Failed to get the default display, exiting...")
 
 # Loads the primary monitor width x height
 __get_primary_monitor_width: Callable[[], int] = (
