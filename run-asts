@@ -1,7 +1,7 @@
-#! env/asts-env/bin/python3
+#! venv/bin/python3
 
-from asts import MainApp
+from asts.interface.asts import Asts
 
 if __name__ == '__main__':
-   MainApp().run()
+   Asts().run(None)
 

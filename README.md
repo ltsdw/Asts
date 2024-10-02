@@ -42,18 +42,19 @@ It can be installed from the official site [Pip installation](https://pip.pypa.i
 
 * Select the files needed:
    * A deck will be created if there is no deck with the name specified.
-   * Generally the collection.anki2 file is under ~/.local/share/Anki2/*\<user name\>*/collection.anki2
+   * Usually the collection.anki2 file is under ~/.local/share/Anki2/*\<user name\>*/collection.anki2
 
-   ![img-1](https://user-images.githubusercontent.com/44977415/139771271-b6fc7180-4e55-4587-b6a7-f1133b5dfd96.png)
+   ![image1](https://github.com/user-attachments/assets/4703cbcc-03d1-4626-98a6-17b8b4b4149f)
 
 * Select and edit the cards that you want add:
    * Before adding cards certify that your anki is **closed**, it's **not possible** to add new cards while anki still open.
    * It's possible edit both sides (front and back) before adding a card.
 
-   ![img-2](https://user-images.githubusercontent.com/44977415/139771334-64cc1ce8-3d0f-40fd-b21e-15721f853f01.png)
+   ![image3](https://github.com/user-attachments/assets/51040ce4-dba5-4d09-b6c0-f00e69a7c1c3)
 
 ## Anki Card Example (Front & Back)
-   ![img-3](https://user-images.githubusercontent.com/44977415/139771380-7afbe41a-fef1-421e-a93f-2f1af9f8fb52.png)
+   ![image2](https://github.com/user-attachments/assets/18318999-ad2d-4ff7-b7fd-5033e19004bc)
+   
 
 ## Related Projects
 
