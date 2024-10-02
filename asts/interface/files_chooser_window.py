@@ -7,7 +7,7 @@ require_version(*GLIB_VERSION)
 require_version(*PANGO_VERSION)
 
 from gi.repository.GLib import timeout_add
-from gi.repository.GLib import Error as GLib_Error
+from gi.repository.GLib import Error as GLibError
 from gi.repository.Gio import AsyncResult, File, Icon
 from gi.repository.Gtk import (
     Align, Application, Box, Button, Entry,
@@ -102,7 +102,7 @@ class _CustomFileChooser(Box):
                 return
 
             self.set_filename(filepath)
-        except GLib_Error as e:
+        except GLibError as e:
             self.unselect_all()
             _print(f"dialog.open_finish: {e}." + NEW_LINE + "Error selecting file." + NEW_LINE)
 
