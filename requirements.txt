@@ -1,5 +1,5 @@
-anki==24.6.3
-aqt==24.6.3
+anki==24.11
+aqt==24.11
 attrs>=24.1.0
 beautifulsoup4>=4.12.3
 blinker>=1.8.2
