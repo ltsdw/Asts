@@ -13,12 +13,16 @@ from gi.repository.Pango import (
 )
 
 from datetime   import datetime, timedelta
+from ffmpeg     import probe, run
+from ffmpeg     import input as FFMPEGInput
+from ffmpeg     import Error as FFMPEGError
 from glob       import glob
 from pysrt      import open as popen
 from pysrt      import SubRipFile
 from pyasstosrt import Subtitle, Dialogue
-from os         import makedirs, path, remove, system
+from os         import makedirs, path, remove
 from tomllib    import load
+from typing     import Any
 
 from asts.utils.core_utils import NEW_LINE, die, handle_exception_if_any, _print
 from asts.custom_typing.aliases import (
@@ -32,6 +36,7 @@ from asts.custom_typing.dialogue_info import DialogueInfo
 from asts.custom_typing.card_info import CardInfo, CardInfoIndex
 from asts.custom_typing.rgba import RGBA
 from asts.custom_typing.text_buffer_pango_markup_parser import TextBufferPangoMarkupParser
+from asts.custom_typing.cards_editor_states import CardsEditorState, CardsEditorStates
 
 
 def is_file_collection(filename: OptionalFilename = None) -> bool:
@@ -102,7 +107,7 @@ def remove_cached_media_files() -> None:
         pass
 
 
-def cut_video(input_file: Filepath, card_info: CardInfo) -> None:
+def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: CardsEditorState) -> None:
     """
     cut_video
 
@@ -110,38 +115,64 @@ def cut_video(input_file: Filepath, card_info: CardInfo) -> None:
 
     :param input_file: Path of the video to be used.
     :param list_media_info: A list with info about how the final media will be.
+    :param cards_editor_state: State object that keeps the track of CardsEditor's class state.
     :return:
     """
 
-    cmd: Command
+    if cards_editor_state.is_state(CardsEditorStates.CANCELLED): return
+
     start_timestamp: OptionalTimestamp     = card_info[CardInfoIndex.START_TIMESTAMP]
     end_timestamp: OptionalTimestamp       = card_info[CardInfoIndex.END_TIMESTAMP]
     video_filepath: OptionalVideoFilepath  = card_info[CardInfoIndex.VIDEO_FILEPATH]
-    audio_filepath: OptionalAudioFilepath    = card_info[CardInfoIndex.AUDIO_FILEPATH]
-    image_filepath: OptionalImageFilepath = card_info[CardInfoIndex.IMAGE_FILEPATH]
+    audio_filepath: OptionalAudioFilepath  = card_info[CardInfoIndex.AUDIO_FILEPATH]
+    image_filepath: OptionalImageFilepath  = card_info[CardInfoIndex.IMAGE_FILEPATH]
 
     if not start_timestamp and not end_timestamp: return
 
-    if video_filepath:
-        cmd = (
-            f"ffmpeg -v quiet -y -i \"{input_file}\" -ss {start_timestamp} -to {end_timestamp} "
-            f"-vf scale=640:-1 -async 1 {video_filepath}"
-        )
-        system(cmd)
-
-    if audio_filepath:
-        cmd = (
-            f"ffmpeg -v quiet -y -i \"{input_file}\" -vn -ss {start_timestamp} -to {end_timestamp} "
-            f"-b:a 320k {audio_filepath}"
-        )
-        system(cmd)
-
-    if image_filepath:
-        cmd = (
-            f"ffmpeg -v quiet -y -ss {start_timestamp} -i \"{input_file}\" -vsync 0 "
-            f"-vframes 1 -filter:v scale=640:-1 {image_filepath}"
-        )
-        system(cmd)
+    try:
+        if video_filepath:
+            FFMPEGInput(
+                input_file,
+                ss=start_timestamp,
+                to=end_timestamp
+            ).output(
+                video_filepath,
+                vf="scale=640:-1",
+            ).global_args(
+                "-y",
+                "-loglevel",
+                "quiet"
+            ).run()
+        if audio_filepath:
+            FFMPEGInput(
+                input_file,
+                ss=start_timestamp,
+                to=end_timestamp
+            ).output(
+                audio_filepath,
+                vn=None,
+                b="320k"
+            ).global_args(
+                "-y",
+                "-loglevel",
+                "quiet"
+            ).run()
+        if image_filepath:
+            FFMPEGInput(
+                input_file,
+                ss=start_timestamp,
+                to=end_timestamp,
+            ).output(
+                vsync=0,
+                vframes=1,
+                filter_complex="scale=640:-1"
+            ).global_args(
+                "-y",
+                "-loglevel",
+                "quiet"
+            ).run()
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
 
 
 def is_ass_file(sub_filepath: OptionalFilepath = None) -> bool:
@@ -449,13 +480,28 @@ def cache_recently_used_files(
     """
 
     data: str = "#! /usr/bin/env toml\n\n"
-    data += f"anki_collection_filepath = \"{anki_collection_filepath}\"\n"
-    data += f"video_filepath = \"{video_filepath}\"\n"
-    data += f"subtitles_filepath = \"{sub_filepath}\"\n"
+
+    if not path.commonpath([CACHE_MEDIA_DIR, anki_collection_filepath]) == CACHE_MEDIA_DIR:
+        data += f"anki_collection_filepath = \"{anki_collection_filepath}\"\n"
+    else:
+        data += f"anki_collection_filepath = \"\"\n"
+
+    if not path.commonpath([CACHE_MEDIA_DIR, video_filepath]) == CACHE_MEDIA_DIR:
+        data += f"video_filepath = \"{video_filepath}\"\n"
+    else:
+        data += f"video_filepath = \"\"\n"
+
+    if not path.commonpath([CACHE_MEDIA_DIR, sub_filepath]) == CACHE_MEDIA_DIR:
+        data += f"subtitles_filepath = \"{sub_filepath}\"\n"
+    else:
+        data += f"subtitles_filepath = \"\"\n"
+
+    if optional_sub_filepath and not path.commonpath([CACHE_MEDIA_DIR, optional_sub_filepath]) == CACHE_MEDIA_DIR:
+        data += f"optional_subtitles_filepath = \"{optional_sub_filepath}\"\n" \
+            if optional_sub_filepath \
+            else "optional_subtitles_filepath = \"\"\n"
+
     data += f"deck_name = \"{deck_name}\"\n"
-    data += f"optional_subtitles_filepath = \"{optional_sub_filepath}\"\n" \
-        if optional_sub_filepath \
-        else "optional_subtitles_filepath = \"\"\n"
 
     with open(RECENTLY_USED_FILEPATH, "w+") as f:
         f.write(data)
@@ -488,8 +534,8 @@ def timestamp_to_timedelta(timestamp: str,  _format: str = "%H:%M:%S.%f") -> tim
 
     Return a timedelta object built based by the timestamp.
 
-    timestamp: Timestamp in the format of _format.
-    _format: Format of the timestamps.
+    :param timestamp: Timestamp in the format of _format.
+    :param _format: Format of the timestamps.
     :return: timedelta object.
     """
 
@@ -514,10 +560,10 @@ def is_timestamp_within(
 
     Tell if the given timestamp is within the start and end timestamp.
 
-    start_timestamp: Start timestamp in the format of _format.
-    end_timestamp: End timestamp in the format of _format.
-    given_timestamp: Given timestamp in the format of _format.
-    _format: Format of the timestamps.
+    :param start_timestamp: Start timestamp in the format of _format.
+    :param end_timestamp: End timestamp in the format of _format.
+    :param given_timestamp: Given timestamp in the format of _format.
+    :param _format: Format of the timestamps.
     :return: True if the given time is within the start and end timestamp.
     """
 
@@ -528,11 +574,86 @@ def is_timestamp_within(
     return start_timedelta <= given_timedelta <= end_timedelta
 
 
+def get_available_encoded_languages(video_filepath: str) -> dict[str, dict[str, str]]:
+    """
+    Return a dictionary of available languages, if there's any.
+
+    :param video_filepath: Path to the video file.
+    :return: Available languages.
+    """
+
+    languages: dict[str, dict[str, str]] = {}
+
+    try:
+        streams: list[dict[str, Any]] | None = probe(
+            video_filepath,
+            select_streams = "s",
+            show_entries = "stream=index,codec_name,codec_type:stream_tags=language",
+            loglevel = "quiet"
+        ).get("streams")
+
+        if not streams:
+            return languages
+
+        for stream in streams:
+            index: str | None = stream.get("index")
+            codec_name: str | None = stream.get("codec_name")
+            codec_type: str | None = stream.get("codec_type")
+            tags: dict[str, str] | None = stream.get("tags")
+
+            if not codec_name or not tags or codec_type != "subtitle" or not index:
+                continue
+
+            language: str | None = tags.get("language")
+
+            if not language:
+                continue
+
+            languages[language + " - " + str(index)] = {"index": str(index), "language": language, "codec_name": codec_name}
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
+
+    return languages
+
+
+def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: str, codec_name: str) -> Filepath | None:
+    """
+    write_subtitle_file
+
+    Writes the selected language subtitles to a file.
+
+    :param video_filepath: Video filepath.
+    :param stream_index: Selected language index.
+    :param language: Selected language.
+    :param codec_name: Name of the codec used in the encoded subtitle.
+    :return: The filepath on success writing the file, None otherwise.
+    """
+
+    output_filepath: Filepath
+    basename, _ = path.splitext(path.basename(video_filepath))
+    output_filepath = path.join(CACHE_MEDIA_DIR, basename + "-" + language + "." + codec_name)
+
+    try:
+        FFMPEGInput(video_filepath).output(
+            output_filepath,
+            map=f"0:{stream_index}"
+        ).global_args(
+            "-y",
+            "-loglevel",
+            "quiet"
+        ).run()
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg to write subtitle file: {e.stderr.decode()}", True)
+
+    return output_filepath if path.exists(output_filepath) else None
+
+
 __all__: list[str] = [
     "remove_cached_media_files", "create_cache_dir", "cut_video", "extract_all_dialogues",
     "get_tagged_text_from_text_buffer", "apply_pango_markup_to_text_buffer",
     "apply_tagged_text_to_text_buffer", "is_file_collection",
     "is_file_subtitles", "is_file_video", "cache_recently_used_files",
-    "set_widget_margin", "handle_exception_if_any", "get_recently_used_files"
+    "set_widget_margin", "handle_exception_if_any", "get_recently_used_files",
+    "get_available_encoded_languages", "write_subtitle_file"
 ]
 

@@ -1,7 +1,15 @@
 #! venv/bin/python3
 
 from asts.interface.asts import Asts
+from asts.utils.extra_utils import remove_cached_media_files, die
+
 
 if __name__ == '__main__':
-   Asts().run(None)
+    try:
+        Asts().run(None)
+        remove_cached_media_files()
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        die(f"Something unexcpeted happened: {e}")
 

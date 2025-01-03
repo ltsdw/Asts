@@ -1,22 +1,27 @@
-from asts.custom_typing.globals import GTK_VERSION, GLIB_VERSION, GIO_VERSION, PANGO_VERSION
+from asts.custom_typing.globals import (
+    GTK_VERSION, GLIB_VERSION, GIO_VERSION,
+    PANGO_VERSION, GOBJECT_VERSION
+)
 
 from gi import require_version
 require_version(*GIO_VERSION)
 require_version(*GTK_VERSION)
 require_version(*GLIB_VERSION)
 require_version(*PANGO_VERSION)
+require_version(*GOBJECT_VERSION)
 
+from gi.repository.GObject import ParamSpec
 from gi.repository.GLib import timeout_add
 from gi.repository.GLib import Error as GLibError
 from gi.repository.Gio import AsyncResult, File, Icon
 from gi.repository.Gtk import (
-    Align, Application, Box, Button, Entry,
+    Align, Application, Box, Button, DropDown, Entry,
     FileDialog, FileFilter, Frame,
-    Grid, Label, Image, Orientation, Window
+    Grid, Label, Image, Orientation, StringList, StringObject, Window
 )
 from gi.repository.Pango import EllipsizeMode
 
-from typing import Literal
+from typing import Any, Callable, cast, Literal
 from enum   import Enum
 from os     import path
 
@@ -25,16 +30,18 @@ from asts.custom_typing.globals  import ICONS_SYMBOLIC_DIRECTORY, DISPLAY_WIDTH,
 from asts.custom_typing.aliases import Filepath, OptionalFilepath
 from asts.utils.core_utils import _print, handle_exception_if_any, NEW_LINE
 from asts.utils.extra_utils import (
-    remove_cached_media_files, create_cache_dir,
+    create_cache_dir,
     is_file_collection, is_file_subtitles, is_file_video, cache_recently_used_files,
-    get_recently_used_files, set_widget_margin
+    get_recently_used_files, set_widget_margin, get_available_encoded_languages, write_subtitle_file
 )
 
 class _CustomFileChooser(Box):
     def __init__(self,
         title: str = "Select a File",
         label: str = "Empty",
-        parent: Window | None = None
+        parent: Window | None = None,
+        selection_callbacks: list[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = [],
+        deselection_callbacks: list[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = []
     ) -> None:
         """
         CustomFileChooser
@@ -44,6 +51,8 @@ class _CustomFileChooser(Box):
         :param title: Title of the FileChooserDialog window.
         :param label: Button's label.
         :param parent: The parent window where the button is placed.
+        :param selection_callbacks: Callback functions to be called when a file is selected and its arguments if any.
+        :param deselection_callbacks: Callback functions to be called when a file is deselected and its arguments if any.
         :return:
         """
 
@@ -55,7 +64,8 @@ class _CustomFileChooser(Box):
         self._filepath: str = ""
         self._parent: Window | None = parent
         self._file_chooser_dialog: FileDialog
-
+        self._selection_callbacks: list[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = selection_callbacks
+        self._deselection_callbacks: list[tuple[Callable[..., Any], tuple[Any, ...], dict[str, Any]]] = deselection_callbacks
         self._button.set_child(self._text_label)
         set_widget_margin(self, DISPLAY_WIDTH * 0.005)
         self._button.set_hexpand(True)
@@ -102,6 +112,7 @@ class _CustomFileChooser(Box):
                 return
 
             self.set_filename(filepath)
+
         except GLibError as e:
             self.unselect_all()
             _print(f"dialog.open_finish: {e}." + NEW_LINE + "Error selecting file." + NEW_LINE)
@@ -146,6 +157,9 @@ class _CustomFileChooser(Box):
         self._file_chooser_dialog.set_initial_file(file)
         self._text_label.set_label(path.basename(self._filepath))
 
+        for callback, args, kwargs in self._selection_callbacks:
+            callback(*args, *kwargs)
+
 
     def unselect_all(self) -> None:
         """
@@ -160,6 +174,10 @@ class _CustomFileChooser(Box):
 
         self._text_label.set_label("Empty")
         self._file_chooser_dialog.set_initial_file(None)
+        self.set_sensitive(True)
+
+        for callback, args, kwargs in self._deselection_callbacks:
+            callback(*args, *kwargs)
 
 
 class _FileChooserButtonIndex(Enum):
@@ -192,9 +210,12 @@ class FilesChooserWindow(Window):
         main_box_frame: Frame = Frame(child=self._main_box)
         self._main_grid: Grid = Grid()
         main_grid_frame: Frame = Frame(child=self._main_grid)
+        self._dropdown_target: DropDown
+        self._dropdown_optional: DropDown
         self._entry: Entry
         self._next_button: Button
         self._filechoosers_list: list[_CustomFileChooser] = self._setup_file_choosers()
+        self._available_languages: dict[str, dict[str, str]] = {}
 
         self.set_resizable(False)
         self.set_default_size(int(DISPLAY_WIDTH * 0.85), int(DISPLAY_HEIGHT * 0.85))
@@ -204,6 +225,7 @@ class FilesChooserWindow(Window):
         set_widget_margin(self._main_grid, DISPLAY_WIDTH * 0.005)
         self._main_box.append(main_grid_frame)
         self._setup_labels()
+        self._setup_dropdowns()
         self._setup_text_entry()
         create_cache_dir()
         self._fill_cached_file()
@@ -224,7 +246,7 @@ class FilesChooserWindow(Window):
         labels: list[Label] = [
             Label(label='collection.anki2 File (Required):'),
             Label(label='Video (Required):'),
-            Label(label='Subtitle File with The Target Language (Required):'),
+            Label(label='Subtitle File with The Target Language (Optional):'),
             Label(label='Subtitle File with Translation (Optional):'),
             Label(label='Deck Name (Required):')
         ]
@@ -251,9 +273,46 @@ class FilesChooserWindow(Window):
         :return: The file choosers created.
         """
 
-        filechooser_list: list[_CustomFileChooser] = [
-            _CustomFileChooser(parent=self) for _ in range(4)
-        ]
+        filechooser_list: list[_CustomFileChooser] = []
+
+        for i in range(4):
+            if i == _FileChooserButtonIndex.VIDEO.value:
+                filechooser_list.append(
+                    _CustomFileChooser(
+                        parent = self,
+                         # callbacks without args or kwargs
+                        selection_callbacks = [
+                            (self.set_available_languages_target, (), {}),
+                            (self.set_available_languages_optional, (), {})
+                        ],
+                        deselection_callbacks = [
+                            (self.reset_available_languages_target, (), {}),
+                            (self.reset_available_languages_optional, (), {})
+                        ],
+                    )
+                )
+            elif i == _FileChooserButtonIndex.SUBTITLE.value:
+                filechooser_list.append(
+                    _CustomFileChooser(
+                        parent = self,
+                         # callbacks without args or kwargs
+                        deselection_callbacks = [
+                            (self.reset_available_languages_target, (), {})
+                        ],
+                    )
+                )
+            elif i == _FileChooserButtonIndex.OPTIONAL_SUBTITLE.value:
+                filechooser_list.append(
+                    _CustomFileChooser(
+                        parent = self,
+                         # callbacks without args or kwargs
+                        deselection_callbacks = [
+                            (self.reset_available_languages_optional, (), {})
+                        ],
+                    )
+                )
+            else:
+                filechooser_list.append(_CustomFileChooser(parent = self))
 
         for (i, filechooser) in enumerate(filechooser_list):
             filechooser.set_hexpand(True)
@@ -378,7 +437,7 @@ class FilesChooserWindow(Window):
                 DISPLAY_WIDTH * 0.0025
             )
             button.set_halign(Align.END)
-            self._main_grid.attach(button, 2, i, 1, 1)
+            self._main_grid.attach(button, 3, i, 1, 1)
 
         buttons_list[_FileChooserButtonIndex.ANKI2_COLLECTION].connect(
             'clicked',
@@ -440,6 +499,203 @@ class FilesChooserWindow(Window):
             DISPLAY_WIDTH * 0.0025
         )
         self._main_grid.attach(self._entry, 1, 4, 1, 1)
+
+
+    def _setup_dropdowns(self) -> None:
+        """
+        _setup_dropdown
+
+        Sets the dropdown for Languages selection.
+
+        :return:
+        """
+
+        string_target: StringList = StringList()
+        string_optional: StringList = StringList()
+        self._dropdown_target = DropDown.new(model=string_target)
+        self._dropdown_optional = DropDown.new(model=string_optional)
+
+        self._dropdown_target.connect("notify::selected-item", self._on_dropdown_target_item_selected)
+        self._dropdown_optional.connect("notify::selected-item", self._on_dropdown_optional_item_selected)
+        set_widget_margin(
+            self._dropdown_target,
+            DISPLAY_WIDTH * 0.005,
+            DISPLAY_WIDTH * 0.0025,
+            DISPLAY_WIDTH * 0.005,
+            DISPLAY_WIDTH * 0.0025
+        )
+        set_widget_margin(
+            self._dropdown_optional,
+            DISPLAY_WIDTH * 0.005,
+            DISPLAY_WIDTH * 0.0025,
+            DISPLAY_WIDTH * 0.005,
+            DISPLAY_WIDTH * 0.0025
+        )
+        self._main_grid.attach(self._dropdown_target, 2, 2, 1, 1)
+        self._main_grid.attach(self._dropdown_optional, 2, 3, 1, 1)
+
+
+    def set_available_languages_target(self) -> None:
+        """
+        set_available_languages_target
+
+        Setup the dropdown for the target languages if they are available.
+
+        :return:
+        """
+
+        list_model: StringList | None = cast(StringList, self._dropdown_target.get_model())
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        self._available_languages = get_available_encoded_languages(video_filepath)
+        languages: list[str] = ["N/a"] + [key for key, _ in self._available_languages.items()]
+
+        list_model.splice(0, list_model.get_n_items(), languages)
+
+
+    def set_available_languages_optional(self) -> None:
+        """
+        set_available_languages_optional
+
+        Setup the dropdown for the optional languages if they are available.
+
+        :return:
+        """
+
+        list_model: StringList | None = cast(StringList, self._dropdown_optional.get_model())
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        self._available_languages = get_available_encoded_languages(video_filepath)
+        languages: list[str] = ["N/a"] + [key for key, _ in self._available_languages.items()]
+
+        list_model.splice(0, list_model.get_n_items(), languages)
+
+
+    def reset_available_languages_target(self) -> None:
+        """
+        reset_available_languages_target
+
+        Select the default option and resets the senstive status.
+
+        :return:
+        """
+
+        list_model: StringList | None = cast(StringList, self._dropdown_target.get_model())
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        self._available_languages = get_available_encoded_languages(video_filepath)
+        languages: list[str] = ["N/a"] + [key for key, _ in self._available_languages.items()]
+
+        self._dropdown_target.set_selected(0)
+        self._dropdown_target.set_sensitive(True)
+        list_model.splice(0, list_model.get_n_items(), languages)
+
+
+    def reset_available_languages_optional(self) -> None:
+        """
+        reset_available_languages_optional
+
+        Select the default option and resets the senstive status.
+
+        :return:
+        """
+
+        list_model: StringList | None = cast(StringList, self._dropdown_optional.get_model())
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        self._available_languages = get_available_encoded_languages(video_filepath)
+        languages: list[str] = ["N/a"] + [key for key, _ in self._available_languages.items()]
+
+        self._dropdown_optional.set_selected(0)
+        self._dropdown_optional.set_sensitive(True)
+        list_model.splice(0, list_model.get_n_items(), languages)
+
+
+    def _on_dropdown_target_item_selected(self, dropdown: DropDown, _: ParamSpec) -> None:
+        """
+        _on_dropdown_target_item_selected
+
+        Handles items selection from the dropdown.
+
+        :param dropdown: The dropdown widget that sent the signal.
+        :param param_spec: Metadata about the property that triggered the signal.
+        :return:
+        """
+
+        selected_index: int = dropdown.get_selected()
+        subtitle_filechooser: _CustomFileChooser = self._filechoosers_list[_FileChooserButtonIndex.SUBTITLE]
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        selected_item: StringObject | None = cast(StringObject | None, dropdown.get_selected_item())
+
+        if selected_index != 0 and selected_item:
+            selection: str = selected_item.get_string()
+            stream_index: str = self._available_languages[selection]["index"]
+            language: str = self._available_languages[selection]["language"]
+            codec_name: str = self._available_languages[selection]["codec_name"]
+            dropdown.set_sensitive(False)
+            subtitle_filechooser.set_sensitive(False)
+
+            subtitle_filepath: Filepath | None = write_subtitle_file(
+                video_filepath,
+                stream_index,
+                language,
+                codec_name
+            )
+
+            dropdown.set_sensitive(True)
+
+            if not subtitle_filepath:
+                _print(f"Failed to write the subtitle file for the selected language.", True)
+
+                return
+
+            subtitle_filechooser.set_filename(subtitle_filepath)
+
+            return
+
+        subtitle_filechooser.set_sensitive(True)
+
+
+    def _on_dropdown_optional_item_selected(self, dropdown: DropDown, _: ParamSpec) -> None:
+        """
+        _on_dropdown_optional_item_selected
+
+        Handles items selection from the dropdown.
+
+        :param dropdown: The dropdown widget that sent the signal.
+        :param param_spec: Metadata about the property that triggered the signal.
+        :return:
+        """
+
+        optional_subtitle_filechooser: _CustomFileChooser = self._filechoosers_list[_FileChooserButtonIndex.OPTIONAL_SUBTITLE]
+        selected_index: int = dropdown.get_selected()
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
+        selected_item: StringObject | None = cast(StringObject | None, dropdown.get_selected_item())
+
+        if selected_index != 0 and selected_item:
+            selection: str = selected_item.get_string()
+            stream_index: str = self._available_languages[selection]["index"]
+            language: str = self._available_languages[selection]["language"]
+            codec_name: str = self._available_languages[selection]["codec_name"]
+            dropdown.set_sensitive(False)
+            optional_subtitle_filechooser.set_sensitive(False)
+
+            subtitle_filepath: Filepath | None = write_subtitle_file(
+                video_filepath,
+                stream_index,
+                language,
+                codec_name
+            )
+
+            dropdown.set_sensitive(True)
+
+
+            if not subtitle_filepath:
+                _print(f"Failed to write the subtitle file for the selected language.", True)
+
+                return
+
+            optional_subtitle_filechooser.set_filename(subtitle_filepath)
+
+            return
+
+        optional_subtitle_filechooser.set_sensitive(True)
 
 
     def get_filepath(self, filechooser_button_index: _FileChooserButtonIndex) -> Filepath:
@@ -527,8 +783,6 @@ class FilesChooserWindow(Window):
         :param next_button: Button that emitted the event.
         :return:
         """
-
-        remove_cached_media_files()
 
         anki_collection_filepath: Filepath = self.get_filepath(_FileChooserButtonIndex.ANKI2_COLLECTION)
         video_filepath: Filepath = self.get_filepath(_FileChooserButtonIndex.VIDEO)
