@@ -364,7 +364,9 @@ class CardsEditor(Window):
         list_item: ListItem
     ) -> None:
         index_label: Label = cast(Label, list_item.get_child())
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
 
         index_label.set_label(row[DialogueInfoIndex.DIALOGUE_INDEX])
 
@@ -383,7 +385,9 @@ class CardsEditor(Window):
         list_item: ListItem
     ) -> None:
         dialogue_label: Label = cast(Label, list_item.get_child())
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
 
         row.bind_property("dialogue", dialogue_label, "label", BindingFlags.SYNC_CREATE)
         dialogue_label.set_markup(row[DialogueInfoIndex.DIALOGUE])
@@ -400,7 +404,10 @@ class CardsEditor(Window):
     ) -> None:
         text: str = entry.get_text()
         result: Match[str] | None = REGEX_TIMESTAMP_PATTERN.match(text)
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         time: str = row[index]
 
         if not result:
@@ -450,7 +457,9 @@ class CardsEditor(Window):
         list_item: ListItem
     ) -> None:
         start_time_entry: Entry = cast(Entry, list_item.get_child())
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
 
         row.bind_property("start_time", start_time_entry, "text", BindingFlags.SYNC_CREATE)
         start_time_entry.set_text(row[DialogueInfoIndex.START_TIMESTAMP])
@@ -478,7 +487,9 @@ class CardsEditor(Window):
         list_item: ListItem
     ) -> None:
         end_time_entry: Entry = cast(Entry, list_item.get_child())
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
 
         row.bind_property("end_time", end_time_entry, "text", BindingFlags.SYNC_CREATE)
         end_time_entry.set_text(row[DialogueInfoIndex.END_TIMESTAMP])
@@ -489,9 +500,11 @@ class CardsEditor(Window):
         check_button: CheckButton,
         list_item: ListItem
     ) -> None:
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
-        is_active: bool = check_button.get_active()
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
+        if not row: return
+
+        is_active: bool = check_button.get_active()
         row[DialogueInfoIndex.HAS_VIDEO] = is_active
 
         if not is_active:
@@ -512,7 +525,10 @@ class CardsEditor(Window):
         check_button: CheckButton,
         list_item: ListItem
     ) -> None:
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         is_active: bool = check_button.get_active()
 
         row[DialogueInfoIndex.HAS_AUDIO] = is_active
@@ -532,7 +548,10 @@ class CardsEditor(Window):
         check_button: CheckButton,
         list_item: ListItem
     ) -> None:
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         is_active: bool = check_button.get_active()
 
         row[DialogueInfoIndex.HAS_IMAGE] = is_active
@@ -565,7 +584,10 @@ class CardsEditor(Window):
     ) -> None:
         video_check_button: CheckButton = cast(CheckButton, list_item.get_child())
 
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         row.bind_property("has_video", video_check_button, "active", BindingFlags.SYNC_CREATE)
 
 
@@ -587,7 +609,10 @@ class CardsEditor(Window):
     ) -> None:
         audio_check_button: CheckButton = cast(CheckButton, list_item.get_child())
 
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         row.bind_property("has_audio", audio_check_button, "active", BindingFlags.SYNC_CREATE)
 
 
@@ -609,7 +634,10 @@ class CardsEditor(Window):
     ) -> None:
         image_check_button: CheckButton = cast(CheckButton, list_item.get_child())
 
-        row: DialogueInfo = cast(DialogueInfo, list_item.get_item())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
         row.bind_property("has_image", image_check_button, "active", BindingFlags.SYNC_CREATE)
 
 
