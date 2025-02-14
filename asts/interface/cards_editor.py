@@ -5,7 +5,7 @@ require_version(*GTK_VERSION)
 require_version(*GLIB_VERSION)
 require_version(*GOBJECT_VERSION)
 from gi.repository.Gtk import (
-    Align, Application, Box, Button, CheckButton, ColorDialog, ColumnView,
+    Align, Application, Box, Button, ColorDialog, ColumnView,
     ColumnViewColumn, CustomFilter, Entry, FilterChange, FilterListModel,
     Frame, Grid, INVALID_LIST_POSITION, Label, ListItem, ListScrollFlags,
     Image, Orientation, ProgressBar, ScrolledWindow,
@@ -34,6 +34,7 @@ from asts.utils.extra_utils import (
     extract_all_dialogues, get_tagged_text_from_text_buffer,
     set_widget_margin, apply_tagged_text_to_text_buffer
 )
+from asts.custom_typing.check_button_wrapper import CheckButtonWrapper
 from asts.custom_typing.aliases import Filepath, OptionalFilepath, SelectionBounds
 from asts.custom_typing.dialogue_info import DialogueInfo, DialogueInfoIndex
 from asts.custom_typing.rgba import RGBA
@@ -100,7 +101,7 @@ class CardsEditor(Window):
 
         self.set_resizable(False)
         self.set_modal(True)
-        self.set_default_size(int(DISPLAY_WIDTH * 0.85), int(DISPLAY_HEIGHT * 0.85))
+        self.set_default_size(int(DISPLAY_WIDTH * 0.90), int(DISPLAY_HEIGHT * 0.90))
         self._main_box.set_orientation(Orientation.VERTICAL)
         set_widget_margin(self._main_box, DISPLAY_WIDTH * 0.005)
         set_widget_margin(self._main_frame, DISPLAY_WIDTH * 0.005)
@@ -497,7 +498,7 @@ class CardsEditor(Window):
 
     def _on_has_video_toggled(
         self,
-        check_button: CheckButton,
+        check_button: CheckButtonWrapper,
         list_item: ListItem
     ) -> None:
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
@@ -505,24 +506,24 @@ class CardsEditor(Window):
         if not row: return
 
         is_active: bool = check_button.get_active()
-        row[DialogueInfoIndex.HAS_VIDEO] = is_active
+        row.has_video = is_active
 
         if not is_active:
             self._number_medias_toggled -= 1
             return
 
-        if row[DialogueInfoIndex.HAS_AUDIO]:
-            row[DialogueInfoIndex.HAS_AUDIO] = False
+        if row.has_audio:
+            row.has_audio = False
 
-        if row[DialogueInfoIndex.HAS_IMAGE]:
-            row[DialogueInfoIndex.HAS_IMAGE] = False
+        if row.has_image:
+            row.has_image = False
 
         self._number_medias_toggled += 1
 
 
     def _on_has_audio_toggled(
         self,
-        check_button: CheckButton,
+        check_button: CheckButtonWrapper,
         list_item: ListItem
     ) -> None:
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
@@ -531,21 +532,21 @@ class CardsEditor(Window):
 
         is_active: bool = check_button.get_active()
 
-        row[DialogueInfoIndex.HAS_AUDIO] = is_active
+        row.has_audio = is_active
 
         if not is_active:
             self._number_medias_toggled -= 1
             return
 
-        if row[DialogueInfoIndex.HAS_VIDEO]:
-            row[DialogueInfoIndex.HAS_VIDEO] = False
+        if row.has_video:
+            row.has_video = False
 
         self._number_medias_toggled += 1
 
 
     def _on_has_image_toggled(
         self,
-        check_button: CheckButton,
+        check_button: CheckButtonWrapper,
         list_item: ListItem
     ) -> None:
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
@@ -554,14 +555,14 @@ class CardsEditor(Window):
 
         is_active: bool = check_button.get_active()
 
-        row[DialogueInfoIndex.HAS_IMAGE] = is_active
+        row.has_image = is_active
 
         if not is_active:
             self._number_medias_toggled -= 1
             return
 
-        if row[DialogueInfoIndex.HAS_VIDEO]:
-            row[DialogueInfoIndex.HAS_VIDEO] = False
+        if row.has_video:
+            row.has_video = False
 
         self._number_medias_toggled += 1
 
@@ -571,7 +572,7 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        video_check_button: CheckButton = CheckButton(halign=Align.CENTER)
+        video_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER, can_focus=False)
 
         video_check_button.connect("toggled", self._on_has_video_toggled, list_item)
         list_item.set_child(video_check_button)
@@ -582,13 +583,20 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        video_check_button: CheckButton = cast(CheckButton, list_item.get_child())
-
+        video_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("has_video", video_check_button, "active", BindingFlags.SYNC_CREATE)
+        if video_check_button.binding:
+            video_check_button.binding.unbind()
+
+        video_check_button.set_active(row.has_video)
+
+        video_check_button.binding = row.bind_property(
+            "has_video", video_check_button, "active",
+            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
+        )
 
 
     def _factory_has_audio_setup(
@@ -596,7 +604,7 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        audios_check_button: CheckButton = CheckButton(halign=Align.CENTER)
+        audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
 
         audios_check_button.connect("toggled", self._on_has_audio_toggled, list_item)
         list_item.set_child(audios_check_button)
@@ -607,13 +615,21 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        audio_check_button: CheckButton = cast(CheckButton, list_item.get_child())
+        audio_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
 
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("has_audio", audio_check_button, "active", BindingFlags.SYNC_CREATE)
+        if audio_check_button.binding:
+            audio_check_button.binding.unbind()
+
+        audio_check_button.set_active(row.has_audio)
+
+        audio_check_button.binding = row.bind_property(
+            "has_audio", audio_check_button, "active",
+            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
+        )
 
 
     def _factory_has_image_setup(
@@ -621,7 +637,7 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        image_check_button: CheckButton = CheckButton(halign=Align.CENTER)
+        image_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
 
         image_check_button.connect("toggled", self._on_has_image_toggled, list_item)
         list_item.set_child(image_check_button)
@@ -632,13 +648,21 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        image_check_button: CheckButton = cast(CheckButton, list_item.get_child())
+        image_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
 
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("has_image", image_check_button, "active", BindingFlags.SYNC_CREATE)
+        if image_check_button.binding:
+            image_check_button.binding.unbind()
+
+        image_check_button.set_active(row.has_image)
+
+        image_check_button.binding = row.bind_property(
+            "has_image", image_check_button, "active",
+            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
+        )
 
 
     def _setup_front_field(self, box: Box) -> None:
@@ -1381,9 +1405,9 @@ class CardsEditor(Window):
         videos_label: Label = Label(label="Videos", halign=Align.CENTER)
         audios_label: Label = Label(label="Audios", halign=Align.CENTER)
         images_label: Label = Label(label="Images", halign=Align.CENTER)
-        all_videos_check_button: CheckButton = CheckButton(halign=Align.CENTER)
-        all_audios_check_button: CheckButton = CheckButton(halign=Align.CENTER)
-        all_images_check_button: CheckButton = CheckButton(halign=Align.CENTER)
+        all_videos_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
+        all_audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
+        all_images_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
 
         set_widget_margin(videos_frame, DISPLAY_WIDTH * 0.0025)
         set_widget_margin(audios_frame, DISPLAY_WIDTH * 0.0025)
@@ -1427,9 +1451,9 @@ class CardsEditor(Window):
 
     def _on_select_all_videos_toggled(
         self,
-        all_videos_check_button: CheckButton,
-        all_audios_check_button: CheckButton,
-        all_images_check_button: CheckButton
+        all_videos_check_button: CheckButtonWrapper,
+        all_audios_check_button: CheckButtonWrapper,
+        all_images_check_button: CheckButtonWrapper
     ) -> None:
         """
         _on_select_all_videos_toggled
@@ -1446,7 +1470,7 @@ class CardsEditor(Window):
         is_toggled: bool = all_videos_check_button.get_active()
 
         for dialogue_info in self._front_field_list_store:
-            dialogue_info[DialogueInfoIndex.HAS_VIDEO] = is_toggled
+            dialogue_info.has_video = is_toggled
 
         if is_toggled:
             all_audios_check_button.set_active(False)
@@ -1455,8 +1479,8 @@ class CardsEditor(Window):
 
     def _on_select_all_audios_toggled(
         self,
-        all_audios_check_button: CheckButton,
-        all_videos_check_button: CheckButton
+        all_audios_check_button: CheckButtonWrapper,
+        all_videos_check_button: CheckButtonWrapper
     ) -> None:
         """
         _on_select_all_audios_toggled
@@ -1471,7 +1495,7 @@ class CardsEditor(Window):
         is_toggled: bool = all_audios_check_button.get_active()
 
         for dialogue_info in self._front_field_list_store:
-            dialogue_info[DialogueInfoIndex.HAS_AUDIO] = is_toggled
+            dialogue_info.has_audio = is_toggled
 
         if is_toggled:
             all_videos_check_button.set_active(False)
@@ -1479,8 +1503,8 @@ class CardsEditor(Window):
 
     def _on_select_all_images_toggled(
         self,
-        all_images_check_button: CheckButton,
-        all_videos_check_button: CheckButton
+        all_images_check_button: CheckButtonWrapper,
+        all_videos_check_button: CheckButtonWrapper
         ) -> None:
         """
         _on_select_all_images_toggled
@@ -1495,7 +1519,7 @@ class CardsEditor(Window):
         is_toggled: bool = all_images_check_button.get_active()
 
         for dialogue_info in self._front_field_list_store:
-            dialogue_info[DialogueInfoIndex.HAS_IMAGE] = is_toggled
+            dialogue_info.has_image = is_toggled
 
         if is_toggled:
             all_videos_check_button.set_active(False)

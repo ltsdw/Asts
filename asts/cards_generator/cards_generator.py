@@ -3,9 +3,9 @@ from anki.decks import DeckId
 from anki.notes import Note
 from anki.models import NotetypeDict
 
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from os                 import path
-from threading          import Lock, Thread
+from threading          import Lock, Thread, Event
 from typing             import cast, Callable, Generator
 
 from asts.custom_typing.globals import (
@@ -66,6 +66,8 @@ class CardsGenerator(Thread):
         self._lock: Lock
         self._cards_editor_state: CardsEditorState = cards_editor_state
         self._max_workers: int = max_workers
+        self._cut_medias_future: list[Future[None]] = []
+        self._prepare_cards_future: list[Future[None]] = []
         self._futures_list: list[Future[None]] = []
         self._chunks_card_info_list: list[list[CardInfo]]
         self._total_number_tasks: int = 0
@@ -125,7 +127,8 @@ class CardsGenerator(Thread):
 
     def _write_card(
         self,
-        card: CardInfo
+        card: CardInfo,
+        wait_for_cut_medias_completion_event: Event
     ) -> None:
         """
         _write_card
@@ -134,10 +137,14 @@ class CardsGenerator(Thread):
         Can raise exception StopAsyncIteration in case of cancelling tasks.
 
         :param tuple_sentence: A CardInfo object with data related to a specific card.
+        :param wait_for_cut_medias_completion_event: Event for waiting on all medias completion.
         :return:
         """
 
         if self._cards_editor_state.is_state(CardsEditorStates.CANCELLED): return
+
+        # Wait for medias to be completed before queuing them to start making cards.
+        wait_for_cut_medias_completion_event.wait()
 
         # the database needs to write cards one by one
         # we need to lock here to ensure that no more than one card
@@ -169,7 +176,10 @@ class CardsGenerator(Thread):
                 image_filepath
             )
 
-            if not note: return
+            if not note:
+                _print(f"Failed to create note: {front_field}{NEW_LINE}{back_field}{NEW_LINE}", True)
+
+                return
 
             self._deck.addNote(note)
 
@@ -193,19 +203,21 @@ class CardsGenerator(Thread):
                     self._cards_editor_state
                 )
 
+                self._cut_medias_future.append(future)
                 self._futures_list.append(future)
                 self._add_task()
                 future.add_done_callback(self._mark_task_completed)
                 future.add_done_callback(self._update_progress_bar_on_done)
 
 
-    def _prepare_cards(self, executor: ThreadPoolExecutor) -> None:
+    def _prepare_cards(self, executor: ThreadPoolExecutor, wait_for_cut_medias_completion_event: Event) -> None:
         """
         _prepare_cards
 
         Prepare cards to be written to the Anki's collection database.
 
         :param executor: Pool of threads where all workers will sit.
+        :param wait_for_cut_medias_completion_event: Event for waiting on all medias completion.
         :return:
         """
 
@@ -232,8 +244,9 @@ class CardsGenerator(Thread):
 
         for card_info_list in self._chunks_card_info_list:
             for card in card_info_list:
-                future: Future[None] = executor.submit(self._write_card, card)
+                future: Future[None] = executor.submit(self._write_card, card, wait_for_cut_medias_completion_event)
 
+                self._prepare_cards_future.append(future)
                 self._futures_list.append(future)
                 self._add_task()
                 future.add_done_callback(self._mark_task_completed)
@@ -415,12 +428,19 @@ class CardsGenerator(Thread):
                 self._max_workers
             )
 
+            # Sets the event for waiting on all medias completion to assure all medias are done when making cards
+            wait_for_cut_medias_completion_event = Event()
+
             # This can raise Anki's DBError exception,
             # let the higher class using this handle it
-
             with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
                 self._cut_medias(executor)
-                self._prepare_cards(executor)
+                self._prepare_cards(executor, wait_for_cut_medias_completion_event)
+                wait(self._cut_medias_future)
+
+                # Sets the event indicating the completion of all medias, cards can be made now
+                wait_for_cut_medias_completion_event.set()
+                wait(self._prepare_cards_future)
         finally:
             self._cleaning()
             self._cards_editor_state.set_state(CardsEditorStates.NORMAL)

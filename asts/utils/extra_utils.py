@@ -13,7 +13,7 @@ from gi.repository.Pango import (
 )
 
 from datetime   import datetime, timedelta
-from ffmpeg     import probe, run
+from ffmpeg     import probe
 from ffmpeg     import input as FFMPEGInput
 from ffmpeg     import Error as FFMPEGError
 from glob       import glob
@@ -26,7 +26,7 @@ from typing     import Any
 
 from asts.utils.core_utils import NEW_LINE, die, handle_exception_if_any, _print
 from asts.custom_typing.aliases import (
-    Command, Filename, Filepath, OptionalFilepath,
+    Filename, Filepath, OptionalFilepath,
     OptionalVideoFilepath, OptionalImageFilepath,
     OptionalAudioFilepath, OptionalFilename, OptionalTimestamp
 )
@@ -163,6 +163,7 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
                 ss=start_timestamp,
                 to=end_timestamp,
             ).output(
+                image_filepath,
                 vsync=0,
                 vframes=1,
                 filter_complex="scale=640:-1"
