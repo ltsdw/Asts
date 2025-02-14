@@ -23,7 +23,7 @@ class CheckButtonWrapper(CheckButton):
 
 
     @property
-    def binding(self):
+    def binding(self) -> Binding | None:
         return self._binding
 
 
