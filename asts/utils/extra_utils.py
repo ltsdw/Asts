@@ -140,6 +140,7 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
                 vf="scale=640:-1",
             ).global_args(
                 "-y",
+                "-nostdin",
                 "-loglevel",
                 "quiet"
             ).run()
@@ -154,6 +155,7 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
                 b="320k"
             ).global_args(
                 "-y",
+                "-nostdin",
                 "-loglevel",
                 "quiet"
             ).run()
@@ -169,6 +171,7 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
                 filter_complex="scale=640:-1"
             ).global_args(
                 "-y",
+                "-nostdin",
                 "-loglevel",
                 "quiet"
             ).run()
@@ -640,6 +643,7 @@ def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: s
             map=f"0:{stream_index}"
         ).global_args(
             "-y",
+            "-nostdin",
             "-loglevel",
             "quiet"
         ).run()
