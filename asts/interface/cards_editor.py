@@ -104,8 +104,6 @@ class CardsEditor(Window):
         self.set_default_size(int(DISPLAY_WIDTH * 0.90), int(DISPLAY_HEIGHT * 0.90))
         self._main_box.set_orientation(Orientation.VERTICAL)
         set_widget_margin(self._main_box, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(self._main_frame, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(self._main_grid, DISPLAY_WIDTH * 0.005)
         self.set_child(self._main_box)
         self._main_box.append(self._main_frame)
         self._setup_cards_editor()
@@ -129,12 +127,6 @@ class CardsEditor(Window):
         self._row_selection = RowSelection(index=0)
 
         DialogueInfo.reset()
-        set_widget_margin(buttons_frame, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(toolbar_frame, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(fields_frame, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(fields_box, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(toolbar_box, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(buttons_box, DISPLAY_WIDTH * 0.005)
         self._populate_list_store()
         self._setup_dialogues_column_view()
         self._setup_search_entry()
@@ -262,7 +254,7 @@ class CardsEditor(Window):
             reorderable=False,
             model=self._selected_row
         )
-        scrolled_window: ScrolledWindow = ScrolledWindow(hexpand=True, vexpand=True)
+        scrolled_window: ScrolledWindow = ScrolledWindow(hexpand=True, vexpand=True, kinetic_scrolling=False)
 
         self._selected_row.connect("selection-changed", self._on_selection_changed)
         scrolled_window.set_child(self._dialogues_columnview)
@@ -684,7 +676,7 @@ class CardsEditor(Window):
             self._on_front_field_text_buffer_changed
         )
 
-        set_widget_margin(label, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(label, DISPLAY_WIDTH * 0.002)
         scrolled_window.set_child(text_view)
         box.append(label)
         box.append(scrolled_window)
@@ -733,7 +725,7 @@ class CardsEditor(Window):
             self._on_back_field_text_buffer_changed
         )
 
-        set_widget_margin(label, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(label, DISPLAY_WIDTH * 0.002)
         scrolled_window.set_child(text_view)
         box.append(label)
         box.append(scrolled_window)
@@ -815,7 +807,7 @@ class CardsEditor(Window):
             filter=custom_filter
         )
 
-        set_widget_margin(self._search_entry, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(self._search_entry, DISPLAY_WIDTH * 0.002)
         self._selected_row.set_model(filter_list_model)
         self._search_entry.connect("search-changed", self._on_search_changed, filter_list_model)
         self._main_grid.attach(self._search_entry, 0, 0, 1, 1)
@@ -892,10 +884,11 @@ class CardsEditor(Window):
         separator_3: Separator = Separator()
         separator_4: Separator = Separator()
 
-        set_widget_margin(separator_1, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(separator_2, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(separator_3, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(separator_4, DISPLAY_WIDTH * 0.005)
+        margin: float = DISPLAY_WIDTH * 0.002
+        set_widget_margin(separator_1, start=margin, end=margin)
+        set_widget_margin(separator_2, start=margin, end=margin)
+        set_widget_margin(separator_3, start=margin, end=margin)
+        set_widget_margin(separator_4, start=margin, end=margin)
 
         self._setup_toolbar_color_button(toolbar_box)
         toolbar_box.append(separator_1)
@@ -1409,15 +1402,9 @@ class CardsEditor(Window):
         all_audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
         all_images_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
 
-        set_widget_margin(videos_frame, DISPLAY_WIDTH * 0.0025)
-        set_widget_margin(audios_frame, DISPLAY_WIDTH * 0.0025)
-        set_widget_margin(images_frame, DISPLAY_WIDTH * 0.0025)
-        set_widget_margin(all_videos_check_button, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(all_audios_check_button, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(all_images_check_button, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(videos_label, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(audios_label, DISPLAY_WIDTH * 0.005)
-        set_widget_margin(images_label, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(videos_frame, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(audios_frame, DISPLAY_WIDTH * 0.005)
+        set_widget_margin(images_frame, DISPLAY_WIDTH * 0.005)
         all_videos_check_button.set_tooltip_text("Select all videos.")
         all_audios_check_button.set_tooltip_text("Select all audios.")
         all_images_check_button.set_tooltip_text("Select all images.")
