@@ -6,7 +6,7 @@ require_version(*GLIB_VERSION)
 require_version(*GOBJECT_VERSION)
 from gi.repository.Gtk import (
     Align, Application, Box, Button, ColorDialog, ColumnView,
-    ColumnViewColumn, CustomFilter, Entry, FilterChange, FilterListModel,
+    ColumnViewColumn, CustomFilter, FilterChange, FilterListModel,
     Frame, Grid, INVALID_LIST_POSITION, Label, ListItem, ListScrollFlags,
     Image, Orientation, ProgressBar, ScrolledWindow,
     SearchEntry, Separator, SignalListItemFactory,
@@ -16,26 +16,27 @@ from gi.repository.Gtk import (
 )
 from gi.repository.Gdk      import RGBA as GdkRGBA
 from gi.repository.Gio      import Icon, AsyncResult
-from gi.repository.GLib     import idle_add, timeout_add
+from gi.repository.GLib     import idle_add, timeout_add, source_remove
 from gi.repository.Pango    import Style, Underline, Weight
 from gi.repository.GObject  import ParamSpec, BindingFlags
 
 from concurrent.futures import Future
 from typing             import cast, Literal, Iterator
 from os                 import path
-from re                 import Match
 
 from asts.custom_typing.globals import (
     DISPLAY_HEIGHT, DISPLAY_WIDTH,
-    ICONS_SYMBOLIC_DIRECTORY, REGEX_TIMESTAMP_PATTERN
+    ICONS_SYMBOLIC_DIRECTORY
 )
 from asts.utils.core_utils import is_timestamp_within, handle_exception_if_any, NEW_LINE
 from asts.utils.extra_utils import (
     extract_all_dialogues, get_tagged_text_from_text_buffer,
     set_widget_margin, apply_tagged_text_to_text_buffer
 )
-from asts.custom_typing.check_button_wrapper import CheckButtonWrapper
-from asts.custom_typing.aliases import Filepath, OptionalFilepath, SelectionBounds
+from asts.custom_typing.aliases import (
+    Filepath, OptionalFilepath, Timestamp, SourceID, SelectionBounds
+)
+from asts.custom_typing.timestamp_field_info import TimestampFieldInfoIndex
 from asts.custom_typing.dialogue_info import DialogueInfo, DialogueInfoIndex
 from asts.custom_typing.rgba import RGBA
 from asts.custom_typing.row_selection import RowSelection
@@ -44,6 +45,8 @@ from asts.custom_typing.css_manager import CssManager
 from asts.custom_typing.cards_editor_states import CardsEditorState, CardsEditorStates
 from asts.cards_generator.cards_generator import CardsGenerator
 from asts.interface.warning_dialog import WarningDialog
+from asts.custom_typing.entry_wrapper import EntryWrapper
+from asts.custom_typing.check_button_wrapper import CheckButtonWrapper
 
 
 class CardsEditor(Window):
@@ -213,10 +216,14 @@ class CardsEditor(Window):
 
                 continue
 
-            start_timestamp: str = dialogue_info[DialogueInfoIndex.START_TIMESTAMP]
-            end_timestamp: str = dialogue_info[DialogueInfoIndex.END_TIMESTAMP]
-            optional_start_timestamp: str = opt_dialogue_info[DialogueInfoIndex.START_TIMESTAMP]
-            optional_end_timestamp: str = opt_dialogue_info[DialogueInfoIndex.END_TIMESTAMP]
+            start_timestamp: Timestamp
+            end_timestamp: Timestamp
+            optional_start_timestamp: Timestamp
+            optional_end_timestamp: Timestamp
+            start_timestamp = dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+            end_timestamp = dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+            optional_start_timestamp = opt_dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+            optional_end_timestamp = opt_dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
 
             if (is_timestamp_within(start_timestamp, end_timestamp, optional_start_timestamp)
             and is_timestamp_within(start_timestamp, end_timestamp, optional_end_timestamp)):
@@ -228,12 +235,11 @@ class CardsEditor(Window):
                 opt_dialogue_info = next(optional_dialogues_iter, None)
 
                 continue
-            else:
-                self._back_field_list_store.append(optional_dialogue_info)
-                optional_dialogue_info = DialogueInfo()
-                dialogue_info = next(dialogues_iter, None)
 
-                continue
+            self._back_field_list_store.append(optional_dialogue_info)
+            optional_dialogue_info = DialogueInfo()
+            dialogue_info = next(dialogues_iter, None)
+
 
         DialogueInfo.reset()
 
@@ -324,10 +330,10 @@ class CardsEditor(Window):
         factory_index.connect("bind", self._factory_index_bind)
         factory_dialogue.connect("setup", self._factory_dialogue_setup)
         factory_dialogue.connect("bind", self._factory_dialogue_bind)
-        factory_start_time.connect("setup", self._factory_start_time_setup)
-        factory_start_time.connect("bind", self._factory_start_time_bind)
-        factory_end_time.connect("setup", self._factory_end_time_setup)
-        factory_end_time.connect("bind", self._factory_end_time_bind)
+        factory_start_time.connect("setup", self._factory_start_timestamp_field_setup)
+        factory_start_time.connect("bind", self._factory_start_timestamp_field_bind)
+        factory_end_time.connect("setup", self._factory_end_timestamp_field_setup)
+        factory_end_time.connect("bind", self._factory_end_timestamp_field_bind)
         factory_has_video.connect("setup", self._factory_has_video_setup)
         factory_has_video.connect("bind", self._factory_has_video_bind)
         factory_has_audio.connect("setup", self._factory_has_audio_setup)
@@ -386,106 +392,134 @@ class CardsEditor(Window):
         dialogue_label.set_markup(row[DialogueInfoIndex.DIALOGUE])
 
 
-    def _handle_time_field_changes(
+    def _handle_timestamp_field_changes(
         self,
-        entry: Entry,
+        entry: EntryWrapper,
         list_item: ListItem,
         index: Literal[
-            DialogueInfoIndex.START_TIMESTAMP,
-            DialogueInfoIndex.END_TIMESTAMP
+            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO,
+            DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO
         ]
-    ) -> None:
+    ) -> bool:
         text: str = entry.get_text()
-        result: Match[str] | None = REGEX_TIMESTAMP_PATTERN.match(text)
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
-        if not row: return
+        if not row: return False
 
-        time: str = row[index]
+        row[index][TimestampFieldInfoIndex.TIMESTAMP] = text
+        row[index][TimestampFieldInfoIndex.SOURCE_ID] = 0
 
-        if not result:
-            entry.set_text(time)
-
-            return
-
-        result_string: str = result.group().replace(",", ".")
-
-        if result_string == time: return
-
-        row[index] = result_string
+        return False
 
 
-    def _on_focus_change(
+    def _on_entry_changed(
         self,
-        entry: Entry,
+        entry: EntryWrapper,
         _: ParamSpec,
         list_item: ListItem,
         index: Literal[
-            DialogueInfoIndex.START_TIMESTAMP,
-            DialogueInfoIndex.END_TIMESTAMP
+            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO,
+            DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO
         ]
     ) -> None:
-        self._handle_time_field_changes(entry, list_item, index)
-
-
-    def _factory_start_time_setup(
-        self,
-        _: SignalListItemFactory,
-        list_item: ListItem
-    ) -> None:
-        start_time_entry: Entry = Entry()
-
-        start_time_entry.connect(
-            "notify::has-focus",
-            self._on_focus_change,
-            list_item,
-            DialogueInfoIndex.START_TIMESTAMP
-        )
-        list_item.set_child(start_time_entry)
-
-
-    def _factory_start_time_bind(
-        self,
-        _: SignalListItemFactory,
-        list_item: ListItem
-    ) -> None:
-        start_time_entry: Entry = cast(Entry, list_item.get_child())
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("start_time", start_time_entry, "text", BindingFlags.SYNC_CREATE)
-        start_time_entry.set_text(row[DialogueInfoIndex.START_TIMESTAMP])
+        source_id: SourceID = row[index][TimestampFieldInfoIndex.SOURCE_ID]
+
+        if source_id:
+            source_remove(source_id)
+
+        row[index][TimestampFieldInfoIndex.SOURCE_ID] = timeout_add(1500, self._handle_timestamp_field_changes, entry, list_item, index)
 
 
-    def _factory_end_time_setup(
+    def _factory_start_timestamp_field_setup(
         self,
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        end_time_entry: Entry = Entry()
+        start_timestamp_field_entry: EntryWrapper = EntryWrapper()
 
-        end_time_entry.connect(
-            "notify::has-focus",
-            self._on_focus_change,
+        list_item.set_child(start_timestamp_field_entry)
+        start_timestamp_field_entry.connect(
+            "notify::text",
+            self._on_entry_changed,
             list_item,
-            DialogueInfoIndex.END_TIMESTAMP
+            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO
         )
-        list_item.set_child(end_time_entry)
 
 
-    def _factory_end_time_bind(
+    def _factory_start_timestamp_field_bind(
         self,
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        end_time_entry: Entry = cast(Entry, list_item.get_child())
+        start_timestamp_field_entry: EntryWrapper = cast(EntryWrapper, list_item.get_child())
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("end_time", end_time_entry, "text", BindingFlags.SYNC_CREATE)
-        end_time_entry.set_text(row[DialogueInfoIndex.END_TIMESTAMP])
+        start_timestamp_field_entry.unbind()
+
+        source_id: SourceID = row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
+        timestamp: Timestamp = row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+
+        if source_id: return
+
+        start_timestamp_field_entry.set_text(timestamp)
+        start_timestamp_field_entry.bind
+        (
+            row.bind_property
+            (
+                "start_timestamp_field_info",
+                start_timestamp_field_entry,
+                "text",
+                BindingFlags.SYNC_CREATE,
+                lambda _, from_value: from_value.timestamp
+            )
+        )
+
+
+    def _factory_end_timestamp_field_setup(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        end_timestamp_field_entry: EntryWrapper = EntryWrapper()
+
+        list_item.set_child(end_timestamp_field_entry)
+
+
+    def _factory_end_timestamp_field_bind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        end_timestamp_field_entry: EntryWrapper = cast(EntryWrapper, list_item.get_child())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
+        end_timestamp_field_entry.unbind()
+
+        source_id: SourceID = row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
+        timestamp: Timestamp = row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+
+        if source_id: return
+
+        end_timestamp_field_entry.set_text(timestamp)
+        end_timestamp_field_entry.bind
+        (
+            row.bind_property
+            (
+                "end_timestamp_field_info",
+                end_timestamp_field_entry,
+                "text",
+                BindingFlags.SYNC_CREATE,
+                lambda _, from_value: from_value.timestamp
+            )
+        )
 
 
     def _on_has_video_toggled(

@@ -14,12 +14,15 @@ OptionalFilepath        = OptionalFilename
 OptionalAudioFilepath   = OptionalFilename
 OptionalImageFilepath   = OptionalFilename
 OptionalVideoFilepath   = OptionalFilename
-OptionalTimestamp       = str | None
 SelectionBounds         = tuple[TextIter, TextIter] | tuple[()]
+Timestamp               = str
+OptionalTimestamp       = Timestamp | None
+SourceID                = int
+
 
 __all__: list[str] = [
     "Command", "Filename", "Filepath", "OptionalFilename", "OptionalFilepath",
     "OptionalAudioFilepath", "OptionalImageFilepath", "OptionalVideoFilepath",
-    "SelectionBounds"
+    "SelectionBounds", "SourceID", "Timestamp", "OptionalTimestamp"
 ]
 

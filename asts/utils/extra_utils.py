@@ -37,6 +37,7 @@ from asts.custom_typing.card_info import CardInfo, CardInfoIndex
 from asts.custom_typing.rgba import RGBA
 from asts.custom_typing.text_buffer_pango_markup_parser import TextBufferPangoMarkupParser
 from asts.custom_typing.cards_editor_states import CardsEditorState, CardsEditorStates
+from asts.custom_typing.timestamp_field_info import TimestampFieldInfo
 
 
 def is_file_collection(filename: OptionalFilename = None) -> bool:
@@ -243,12 +244,12 @@ def create_dialogue_info(subtitle: list[str]) -> DialogueInfo:
     _dialogue: str = "\n".join(dlg for dlg in subtitle[2:] if dlg)
 
     card_info: DialogueInfo = DialogueInfo(
-        dialogue=markup_escape_text(_dialogue, length = -1),
-        start_time=_start_time,
-        end_time=_end_time,
-        has_video=False,
-        has_audio=False,
-        has_image=False
+        dialogue = markup_escape_text(_dialogue, length = -1),
+        start_timestamp_field_info = TimestampFieldInfo(_start_time),
+        end_timestamp_field_info = TimestampFieldInfo(_end_time),
+        has_video = False,
+        has_audio = False,
+        has_image = False
     )
 
     return card_info

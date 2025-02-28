@@ -8,6 +8,8 @@ from enum import Enum
 from typing import Literal, overload
 from uuid import uuid1
 
+from asts.custom_typing.timestamp_field_info import TimestampFieldInfo
+
 
 class DialogueInfoIndex(Enum):
     """
@@ -16,14 +18,14 @@ class DialogueInfoIndex(Enum):
     Simple Enum class to safely index DialogueInfo data.
     """
 
-    DIALOGUE_INDEX  = 0
-    DIALOGUE_UUID   = 1
-    DIALOGUE        = 2
-    START_TIMESTAMP = 3
-    END_TIMESTAMP   = 4
-    HAS_VIDEO       = 5
-    HAS_AUDIO       = 6
-    HAS_IMAGE       = 7
+    DIALOGUE_INDEX              = 0
+    DIALOGUE_UUID               = 1
+    DIALOGUE                    = 2
+    START_TIMESTAMP_FIELD_INFO  = 3
+    END_TIMESTAMP_FIELD_INFO    = 4
+    HAS_VIDEO                   = 5
+    HAS_AUDIO                   = 6
+    HAS_IMAGE                   = 7
 
 
     def __index__(self) -> Literal[0, 1, 2, 3, 4, 5, 6, 7]:
@@ -36,8 +38,8 @@ class DialogueInfo(Object):
     def __init__(
         self,
         dialogue: str = "",
-        start_time: str = "",
-        end_time: str = "",
+        start_timestamp_field_info: TimestampFieldInfo = TimestampFieldInfo(),
+        end_timestamp_field_info: TimestampFieldInfo = TimestampFieldInfo(),
         has_video: bool = False,
         has_audio: bool = False,
         has_image: bool = False
@@ -49,8 +51,8 @@ class DialogueInfo(Object):
         Inherits from GObject.Object so it can then be used within Gio.ListStore.
 
         :param dialogue: Dialogue.
-        :param start_time: Start time of the dialogue.
-        :param end_time: End time of the dialogue.
+        :param start_timestamp_field_info: Start timestamp information of the dialogue.
+        :param end_timestamp_field_info: End timestamp information of the dialogue.
         :param has_video: If the card has video media.
         :param has_audio: If the card has audio media.
         :param has_image: If the card has image media.
@@ -59,15 +61,16 @@ class DialogueInfo(Object):
 
         super().__init__()
 
-        self._index: int = DialogueInfo.__cls_index
-        DialogueInfo.__cls_index += 1
-        self._dialogue_uuid: str = str(uuid1())
-        self._dialogue: str = dialogue
-        self._start_time: str = start_time
-        self._end_time: str = end_time
-        self._has_video: bool = has_video
-        self._has_audio: bool = has_audio
-        self._has_image: bool = has_image
+        # Class index is 0-based
+        self._index: int                                        = DialogueInfo.__cls_index
+        DialogueInfo.__cls_index                                += 1
+        self._dialogue_uuid: str                                = str(uuid1())
+        self._dialogue: str                                     = dialogue
+        self._start_timestamp_field_info: TimestampFieldInfo    = start_timestamp_field_info
+        self._end_timestamp_field_info: TimestampFieldInfo      = end_timestamp_field_info
+        self._has_video: bool                                   = has_video
+        self._has_audio: bool                                   = has_audio
+        self._has_image: bool                                   = has_image
 
 
     @Property(type=str, default="", flags=ParamFlags.READABLE)
@@ -89,7 +92,7 @@ class DialogueInfo(Object):
 
 
     @Property(type=str, default="")
-    def dialogue(self):
+    def dialogue(self) -> str:
         return self._dialogue
 
 
@@ -102,36 +105,36 @@ class DialogueInfo(Object):
         self.notify("dialogue")
 
 
-    @Property(type=str, default="")
-    def start_time(self):
-        return self._start_time
+    @Property(type=TimestampFieldInfo, default=TimestampFieldInfo())
+    def start_timestamp_field_info(self) -> TimestampFieldInfo:
+        return self._start_timestamp_field_info
 
 
-    @start_time.setter
-    def start_time(self, value: str) -> None:
-        if self._start_time == value: return
+    @start_timestamp_field_info.setter
+    def start_timestamp_field_info(self, value: TimestampFieldInfo) -> None:
+        if self._start_timestamp_field_info == value: return
 
-        self._start_time = value
+        self._start_timestamp_field_info = value
 
-        self.notify("start_time")
-
-
-    @Property(type=str, default="")
-    def end_time(self):
-        return self._end_time
+        self.notify("start_timestamp_field_info")
 
 
-    @end_time.setter
-    def end_time(self, value: str) -> None:
-        if self._end_time == value: return
+    @Property(type=TimestampFieldInfo, default=TimestampFieldInfo())
+    def end_timestamp_field_info(self) -> TimestampFieldInfo:
+        return self._end_timestamp_field_info
 
-        self._end_time = value
 
-        self.notify("end_time")
+    @end_timestamp_field_info.setter
+    def end_timestamp_field_info(self, value: TimestampFieldInfo) -> None:
+        if self._end_timestamp_field_info == value: return
+
+        self._end_timestamp_field_info = value
+
+        self.notify("end_timestamp_field_info")
 
 
     @Property(type=bool, default=False)
-    def has_video(self):
+    def has_video(self) -> bool:
         return self._has_video
 
 
@@ -145,7 +148,7 @@ class DialogueInfo(Object):
 
 
     @Property(type=bool, default=False)
-    def has_audio(self):
+    def has_audio(self) -> bool:
         return self._has_audio
 
 
@@ -159,7 +162,7 @@ class DialogueInfo(Object):
 
 
     @Property(type=bool, default=False)
-    def has_image(self):
+    def has_image(self) -> bool:
         return self._has_image
 
 
@@ -179,10 +182,18 @@ class DialogueInfo(Object):
             DialogueInfoIndex.DIALOGUE_INDEX,
             DialogueInfoIndex.DIALOGUE_UUID,
             DialogueInfoIndex.DIALOGUE,
-            DialogueInfoIndex.START_TIMESTAMP,
-            DialogueInfoIndex.END_TIMESTAMP
         ]
     ) -> str: ...
+
+
+    @overload
+    def __getitem__(
+        self,
+        key: Literal[
+            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO,
+            DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO,
+        ]
+    ) -> TimestampFieldInfo: ...
 
 
     @overload
@@ -196,7 +207,7 @@ class DialogueInfo(Object):
     ) -> bool: ...
 
 
-    def __getitem__(self, key: DialogueInfoIndex) -> str | bool:
+    def __getitem__(self, key: DialogueInfoIndex) -> str | TimestampFieldInfo | bool:
         match key:
             case DialogueInfoIndex.DIALOGUE_UUID:
                 return self.dialogue_uuid
@@ -204,10 +215,10 @@ class DialogueInfo(Object):
                 return self.index
             case DialogueInfoIndex.DIALOGUE:
                 return self.dialogue
-            case DialogueInfoIndex.START_TIMESTAMP:
-                return self.start_time
-            case DialogueInfoIndex.END_TIMESTAMP:
-                return self.end_time
+            case DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO:
+                return self.start_timestamp_field_info
+            case DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO:
+                return self.end_timestamp_field_info
             case DialogueInfoIndex.HAS_VIDEO:
                 return self.has_video
             case DialogueInfoIndex.HAS_AUDIO:
@@ -223,10 +234,19 @@ class DialogueInfo(Object):
             DialogueInfoIndex.DIALOGUE_INDEX,
             DialogueInfoIndex.DIALOGUE_UUID,
             DialogueInfoIndex.DIALOGUE,
-            DialogueInfoIndex.START_TIMESTAMP,
-            DialogueInfoIndex.END_TIMESTAMP
         ],
         value: str
+    ) -> None: ...
+
+
+    @overload
+    def __setitem__(
+        self,
+        key: Literal[
+            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO,
+            DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO,
+        ],
+        value: TimestampFieldInfo
     ) -> None: ...
 
 
@@ -253,16 +273,16 @@ class DialogueInfo(Object):
                     raise TypeError(f"Expected string for {key}")
 
                 self.dialogue = value
-            case DialogueInfoIndex.START_TIMESTAMP:
-                if not isinstance(value, str):
-                    raise TypeError(f"Expected string for {key}")
+            case DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO:
+                if not isinstance(value, TimestampFieldInfo):
+                    raise TypeError(f"Expected TimestampFieldInfo object for {key}")
 
-                self.start_time = value
-            case DialogueInfoIndex.END_TIMESTAMP:
-                if not isinstance(value, str):
-                    raise TypeError(f"Expected string for {key}")
+                self.start_timestamp_field_info = value
+            case DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO:
+                if not isinstance(value, TimestampFieldInfo):
+                    raise TypeError(f"Expected TimestampFieldInfo object for {key}")
 
-                self.end_time = value
+                self.end_timestamp_field_info = value
             case DialogueInfoIndex.HAS_VIDEO:
                 if not isinstance(value, bool):
                     raise TypeError(f"Expected bool for {key}")

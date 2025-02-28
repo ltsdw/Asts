@@ -3,17 +3,17 @@ from asts.custom_typing.globals import GTK_VERSION, GOBJECT_VERSION
 from gi import require_version
 require_version(*GTK_VERSION)
 require_version(*GOBJECT_VERSION)
-from gi.repository.Gtk import CheckButton
+from gi.repository.Gtk import Entry
 from gi.repository.GObject import Binding
 
 
-class CheckButtonWrapper(CheckButton):
+class EntryWrapper(Entry):
     def __init__(self, *args, **kwargs) -> None:
         """
-        Wrapper class around Gtk.CheckButton to keep track of Gtk.CheckButton bindings.
+        Wrapper class around Gtk.Entry to keep track of Gtk.Entry bindings.
 
-        :param args: Positional arguments for Gtk.CheckButton.
-        :param kwargs: Keyword arguments for Gtk.CheckButton.
+        :param args: Positional arguments for Gtk.Entry.
+        :param kwargs: Keyword arguments for Gtk.Entry.
         :return:
         """
 
@@ -59,5 +59,5 @@ class CheckButtonWrapper(CheckButton):
         if self._binding: self._binding.unbind()
 
 
-__all__: list[str] = ["CheckButtonWrapper"]
+__all__: list[str] = ["EntryWrapper"]
 
