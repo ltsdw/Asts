@@ -287,12 +287,10 @@ class CardsGenerator(Thread):
                 back_field=back_field_text
             )
             card_info[CardInfoIndex.START_TIMESTAMP] = (
-                dialogue_info_front[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO]
-                [TimestampFieldInfoIndex.TIMESTAMP]
+                dialogue_info_front[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].getTimestampObject()
             )
             card_info[CardInfoIndex.END_TIMESTAMP] = (
-                dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO]
-                [TimestampFieldInfoIndex.TIMESTAMP]
+                dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].getTimestampObject()
             )
 
             if dialogue_info_front[DialogueInfoIndex.HAS_VIDEO]:

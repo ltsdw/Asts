@@ -12,7 +12,6 @@ from gi.repository.Pango import (
     AttrInt, AttrType, Style, Underline, Weight
 )
 
-from datetime   import datetime, timedelta
 from ffmpeg     import probe
 from ffmpeg     import input as FFMPEGInput
 from ffmpeg     import Error as FFMPEGError
@@ -28,7 +27,7 @@ from asts.utils.core_utils import NEW_LINE, die, handle_exception_if_any, _print
 from asts.custom_typing.aliases import (
     Filename, Filepath, OptionalFilepath,
     OptionalVideoFilepath, OptionalImageFilepath,
-    OptionalAudioFilepath, OptionalFilename, OptionalTimestamp
+    OptionalAudioFilepath, OptionalFilename, StrTimestamp
 )
 from asts.custom_typing.globals import CACHE_MEDIA_DIR, RECENTLY_USED_FILEPATH
 from asts.custom_typing.format_tags import FormatTags
@@ -122,13 +121,11 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
 
     if cards_editor_state.is_state(CardsEditorStates.CANCELLED): return
 
-    start_timestamp: OptionalTimestamp     = card_info[CardInfoIndex.START_TIMESTAMP]
-    end_timestamp: OptionalTimestamp       = card_info[CardInfoIndex.END_TIMESTAMP]
-    video_filepath: OptionalVideoFilepath  = card_info[CardInfoIndex.VIDEO_FILEPATH]
-    audio_filepath: OptionalAudioFilepath  = card_info[CardInfoIndex.AUDIO_FILEPATH]
-    image_filepath: OptionalImageFilepath  = card_info[CardInfoIndex.IMAGE_FILEPATH]
-
-    if not start_timestamp and not end_timestamp: return
+    start_timestamp: StrTimestamp           = card_info[CardInfoIndex.START_TIMESTAMP].timestamp
+    end_timestamp: StrTimestamp             = card_info[CardInfoIndex.END_TIMESTAMP].timestamp
+    video_filepath: OptionalVideoFilepath   = card_info[CardInfoIndex.VIDEO_FILEPATH]
+    audio_filepath: OptionalAudioFilepath   = card_info[CardInfoIndex.AUDIO_FILEPATH]
+    image_filepath: OptionalImageFilepath   = card_info[CardInfoIndex.IMAGE_FILEPATH]
 
     try:
         if video_filepath:
@@ -531,52 +528,6 @@ def get_recently_used_files() -> dict[str, str] | None:
         )
 
     return data
-
-
-def timestamp_to_timedelta(timestamp: str,  _format: str = "%H:%M:%S.%f") -> timedelta:
-    """
-    timestamp_to_timedelta
-
-    Return a timedelta object built based by the timestamp.
-
-    :param timestamp: Timestamp in the format of _format.
-    :param _format: Format of the timestamps.
-    :return: timedelta object.
-    """
-
-    parsed_time: datetime = datetime.strptime(timestamp, _format)
-
-    return timedelta(
-        hours=parsed_time.hour,
-        minutes=parsed_time.minute,
-        seconds=parsed_time.second,
-        microseconds=parsed_time.microsecond // 1000
-    )
-
-
-def is_timestamp_within(
-    start_timestamp: str,
-    end_timestamp: str,
-    given_timestamp: str,
-    _format: str = "%H:%M:%S.%f"
-) -> bool:
-    """
-    is_timestamp_within
-
-    Tell if the given timestamp is within the start and end timestamp.
-
-    :param start_timestamp: Start timestamp in the format of _format.
-    :param end_timestamp: End timestamp in the format of _format.
-    :param given_timestamp: Given timestamp in the format of _format.
-    :param _format: Format of the timestamps.
-    :return: True if the given time is within the start and end timestamp.
-    """
-
-    start_timedelta: timedelta = timestamp_to_timedelta(start_timestamp, _format)
-    end_timedelta: timedelta = timestamp_to_timedelta(end_timestamp, _format)
-    given_timedelta: timedelta = timestamp_to_timedelta(given_timestamp, _format)
-
-    return start_timedelta <= given_timedelta <= end_timedelta
 
 
 def get_available_encoded_languages(video_filepath: str) -> dict[str, dict[str, str]]:

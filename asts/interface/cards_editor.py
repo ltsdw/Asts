@@ -34,7 +34,7 @@ from asts.utils.extra_utils import (
     set_widget_margin, apply_tagged_text_to_text_buffer
 )
 from asts.custom_typing.aliases import (
-    Filepath, OptionalFilepath, Timestamp, SourceID, SelectionBounds
+    Filepath, OptionalFilepath, SourceID, SelectionBounds, StrTimestamp
 )
 from asts.custom_typing.timestamp_field_info import TimestampFieldInfoIndex
 from asts.custom_typing.dialogue_info import DialogueInfo, DialogueInfoIndex
@@ -216,14 +216,27 @@ class CardsEditor(Window):
 
                 continue
 
-            start_timestamp: Timestamp
-            end_timestamp: Timestamp
-            optional_start_timestamp: Timestamp
-            optional_end_timestamp: Timestamp
-            start_timestamp = dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
-            end_timestamp = dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
-            optional_start_timestamp = opt_dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
-            optional_end_timestamp = opt_dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+            start_timestamp: StrTimestamp
+            end_timestamp: StrTimestamp
+            optional_start_timestamp: StrTimestamp
+            optional_end_timestamp: StrTimestamp
+
+            start_timestamp = (
+                dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO]
+                [TimestampFieldInfoIndex.TIMESTAMP]
+            )
+            end_timestamp = (
+                dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO]
+                [TimestampFieldInfoIndex.TIMESTAMP]
+            )
+            optional_start_timestamp = (
+                opt_dialogue_info[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO]
+                [TimestampFieldInfoIndex.TIMESTAMP]
+            )
+            optional_end_timestamp = (
+                opt_dialogue_info[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO]
+                [TimestampFieldInfoIndex.TIMESTAMP]
+            )
 
             if (is_timestamp_within(start_timestamp, end_timestamp, optional_start_timestamp)
             and is_timestamp_within(start_timestamp, end_timestamp, optional_end_timestamp)):
@@ -401,7 +414,7 @@ class CardsEditor(Window):
             DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO
         ]
     ) -> bool:
-        text: str = entry.get_text()
+        text: StrTimestamp = entry.get_text()
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return False
@@ -463,7 +476,10 @@ class CardsEditor(Window):
         start_timestamp_field_entry.unbind()
 
         source_id: SourceID = row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
-        timestamp: Timestamp = row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+        timestamp: StrTimestamp = (
+            row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO]
+            [TimestampFieldInfoIndex.TIMESTAMP]
+        )
 
         if source_id: return
 
@@ -504,7 +520,10 @@ class CardsEditor(Window):
         end_timestamp_field_entry.unbind()
 
         source_id: SourceID = row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
-        timestamp: Timestamp = row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.TIMESTAMP]
+        timestamp: StrTimestamp = (
+            row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO]
+            [TimestampFieldInfoIndex.TIMESTAMP]
+        )
 
         if source_id: return
 

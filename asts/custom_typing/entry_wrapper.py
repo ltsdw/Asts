@@ -6,9 +6,13 @@ require_version(*GOBJECT_VERSION)
 from gi.repository.Gtk import Entry
 from gi.repository.GObject import Binding
 
+from typing import Any
 
-class EntryWrapper(Entry):
-    def __init__(self, *args, **kwargs) -> None:
+from asts.custom_typing.base_widget_binding_wrapper import BaseWidgetBindingWrapper
+
+
+class EntryWrapper(Entry, BaseWidgetBindingWrapper):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Wrapper class around Gtk.Entry to keep track of Gtk.Entry bindings.
 
@@ -17,46 +21,10 @@ class EntryWrapper(Entry):
         :return:
         """
 
-        super().__init__(*args, **kwargs)
+        binding: Binding | None = kwargs.pop("binding", None)
 
-        self._binding: Binding | None = None
-
-
-    @property
-    def binding(self) -> Binding | None:
-        return self._binding
-
-
-    @binding.setter
-    def binding(self, value: Binding) -> None:
-        if self._binding == value: return
-
-        self._binding = value
-
-
-    def bind(self, binding: Binding) -> None:
-        """
-        bind
-
-        Store this widget binding.
-
-        :param binding: Binding to be stored.
-        :return:
-        """
-
-        self.binding = binding
-
-
-    def unbind(self) -> None:
-        """
-        unbind
-
-        Unbind any binding from this widget.
-
-        :return:
-        """
-
-        if self._binding: self._binding.unbind()
+        Entry.__init__(self, *args, **kwargs)
+        BaseWidgetBindingWrapper.__init__(self, binding)
 
 
 __all__: list[str] = ["EntryWrapper"]

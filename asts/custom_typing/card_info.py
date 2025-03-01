@@ -1,11 +1,10 @@
 from enum import Enum
 from typing import cast, Literal, overload, TypeVar
 
-from asts.custom_typing.globals import REGEX_TIMESTAMP_PATTERN
 from asts.custom_typing.aliases import (
-    OptionalVideoFilepath, OptionalAudioFilepath, OptionalImageFilepath,
-    OptionalTimestamp
+    OptionalVideoFilepath, OptionalAudioFilepath, OptionalImageFilepath
 )
+from asts.custom_typing.timestamp import Timestamp
 
 
 _TypeCardInfoIndex = TypeVar("_TypeCardInfoIndex", bound="CardInfoIndex")
@@ -31,7 +30,7 @@ class CardInfoIndex(Enum):
         return self.value
 
 
-    def is_index(self: _TypeCardInfoIndex, index: _TypeCardInfoIndex) -> bool:
+    def is_index(self: "CardInfoIndex", index: "CardInfoIndex") -> bool:
         return (self.value == index.value)
 
 
@@ -43,15 +42,13 @@ class CardInfoIndex(Enum):
         return cast(_TypeCardInfoIndex, CardInfoIndex(index))
 
 
-_TypeCardInfo = TypeVar("_TypeCardInfo", bound="CardInfo")
-
 class CardInfo:
     def __init__(
         self,
         front_field: str = "",
         back_field: str = "",
-        start_timestamp: OptionalTimestamp = None,
-        end_timestamp: OptionalTimestamp = None,
+        start_timestamp: Timestamp = Timestamp(),
+        end_timestamp: Timestamp = Timestamp(),
         video_filepath: OptionalVideoFilepath = None,
         audio_filepath: OptionalAudioFilepath = None,
         image_filepath: OptionalImageFilepath = None
@@ -72,16 +69,10 @@ class CardInfo:
         :return:
         """
 
-        self._front_field: str = front_field
-        self._back_field: str = back_field
-        self._start_timestamp: OptionalTimestamp = None
-        self._end_timestamp: OptionalTimestamp = None
-
-        if start_timestamp and REGEX_TIMESTAMP_PATTERN.match(start_timestamp):
-            self._start_timestamp = start_timestamp.replace(",",".")
-
-        if end_timestamp and REGEX_TIMESTAMP_PATTERN.match(end_timestamp):
-            self._end_timestamp = end_timestamp.replace(",",".")
+        self._front_field: str          = front_field
+        self._back_field: str           = back_field
+        self._start_timestamp: Timestamp= start_timestamp
+        self._end_timestamp: Timestamp  = end_timestamp
 
         self._video_filepath: OptionalVideoFilepath = video_filepath
         self._audio_filepath: OptionalAudioFilepath = audio_filepath
@@ -89,11 +80,11 @@ class CardInfo:
         self._card_info_index: CardInfoIndex = CardInfoIndex.FRONT_FIELD
 
 
-    def __iter__(self: _TypeCardInfo) -> _TypeCardInfo:
+    def __iter__(self: "CardInfo") -> "CardInfo":
         return self
 
 
-    def __next__(self) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath:
+    def __next__(self) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath | Timestamp:
         if self._card_info_index.is_index(CardInfoIndex.OUT_OF_INDEX):
             raise StopIteration
 
@@ -146,20 +137,20 @@ class CardInfo:
         key: Literal[
             CardInfoIndex.START_TIMESTAMP,
             CardInfoIndex.END_TIMESTAMP
-        ]) -> OptionalTimestamp: ...
+        ]) -> Timestamp: ...
 
 
     @overload
     def __getitem__(
         self,
         key: CardInfoIndex
-    ) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath | OptionalTimestamp: ...
+    ) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath | Timestamp: ...
 
 
     def __getitem__(
         self,
         key: CardInfoIndex
-    ) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath | OptionalTimestamp:
+    ) -> str | OptionalVideoFilepath | OptionalAudioFilepath | OptionalImageFilepath | Timestamp:
         match key:
             case CardInfoIndex.FRONT_FIELD:
                 return self._front_field
@@ -225,7 +216,7 @@ class CardInfo:
             CardInfoIndex.START_TIMESTAMP,
             CardInfoIndex.END_TIMESTAMP
         ],
-        value: OptionalTimestamp
+        value: Timestamp
     ) -> None: ...
 
 
@@ -257,17 +248,15 @@ class CardInfo:
 
                 self._image_filepath = value
             case CardInfoIndex.START_TIMESTAMP:
-                if not isinstance(value, OptionalTimestamp):
-                    raise TypeError(f"Expected {OptionalTimestamp} for {key}")
+                if not isinstance(value, Timestamp):
+                    raise TypeError(f"Expected {Timestamp} for {key}")
 
-                if value and REGEX_TIMESTAMP_PATTERN.match(value):
-                    self._start_timestamp = value.replace(",",".")
+                self._start_timestamp = value
             case CardInfoIndex.END_TIMESTAMP:
-                if not isinstance(value, OptionalTimestamp):
-                    raise TypeError(f"Expected {OptionalTimestamp} for {key}")
+                if not isinstance(value, Timestamp):
+                    raise TypeError(f"Expected {Timestamp} for {key}")
 
-                if value and REGEX_TIMESTAMP_PATTERN.match(value):
-                    self._end_timestamp = value.replace(",",".")
+                self._end_timestamp = value
 
 
 __all__: list[str] = ["CardInfo", "CardInfoIndex"]
