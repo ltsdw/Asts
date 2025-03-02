@@ -11,7 +11,7 @@ require_version(*PANGO_VERSION)
 require_version(*GOBJECT_VERSION)
 
 from gi.repository.GObject import ParamSpec
-from gi.repository.GLib import timeout_add
+from gi.repository.GLib import timeout_add, idle_add
 from gi.repository.GLib import Error as GLibError
 from gi.repository.Gio import AsyncResult, File, Icon
 from gi.repository.Gtk import (
@@ -21,10 +21,13 @@ from gi.repository.Gtk import (
 )
 from gi.repository.Pango import EllipsizeMode
 
-from typing import Any, Callable, cast, Literal
-from enum   import Enum
-from os     import path
+from typing     import Any, Callable, cast, Literal
+from enum       import Enum
+from os         import path
+from subprocess import Popen
+from threading  import Thread
 
+from asts.interface.loading_screen import LoadingScreen
 from asts.interface.cards_editor import CardsEditor
 from asts.custom_typing.globals  import ICONS_SYMBOLIC_DIRECTORY, DISPLAY_WIDTH, DISPLAY_HEIGHT
 from asts.custom_typing.aliases import Filepath, OptionalFilepath
@@ -214,6 +217,7 @@ class FilesChooserWindow(Window):
         self._dropdown_optional: DropDown
         self._entry: Entry
         self._next_button: Button
+        self._loading_screen: LoadingScreen = LoadingScreen(self)
         self._filechoosers_list: list[_CustomFileChooser] = self._setup_file_choosers()
         self._available_languages: dict[str, dict[str, str]] = {}
 
@@ -607,6 +611,38 @@ class FilesChooserWindow(Window):
         list_model.splice(0, list_model.get_n_items(), languages)
 
 
+    def _wait_for_subtitle_file_creation(self, process: Popen[bytes]) -> None:
+        """
+        _wait_for_subtitle_file_creation
+
+        Wait for the ffmpeg process to finish.
+        While the thread is busy the main thread spawns a loading screen,
+        which will be hidden once the job is done.
+
+        :param process: ffmpeg process for creating the subtitles.
+        :return:
+        """
+
+        idle_add(self._main_box.set_sensitive, False)
+        idle_add(self._loading_screen.show_loading_screen)
+        process.wait(40) # wait up to 40 seconds before giving up
+        idle_add(self._loading_screen.hide_loading_screen)
+        idle_add(self._main_box.set_sensitive, True)
+
+
+    def _threaded_subtitle_creation(self, process: Popen[bytes]) -> None:
+        """
+        _threaded_subtitle_creation
+
+        Creates a thread to wait for the ffmpeg process to finish its job.
+
+        :param process: ffmpeg process for creating the subtitles.
+        :return:
+        """
+
+        Thread(target=self._wait_for_subtitle_file_creation, args=(process,), daemon=True).start()
+
+
     def _on_dropdown_target_item_selected(self, dropdown: DropDown, _: ParamSpec) -> None:
         """
         _on_dropdown_target_item_selected
@@ -631,12 +667,15 @@ class FilesChooserWindow(Window):
             dropdown.set_sensitive(False)
             subtitle_filechooser.set_sensitive(False)
 
-            subtitle_filepath: Filepath | None = write_subtitle_file(
+            subtitle_filepath: Filepath | None
+            process: Popen[bytes] | None
+
+            subtitle_filepath, process = write_subtitle_file(
                 video_filepath,
                 stream_index,
                 language,
                 codec_name
-            )
+            ) or (None, None)
 
             dropdown.set_sensitive(True)
 
@@ -645,6 +684,12 @@ class FilesChooserWindow(Window):
 
                 return
 
+            if not process:
+                _print(f"Failed to write the subtitle file for the selected language.", True)
+
+                return
+
+            self._threaded_subtitle_creation(process)
             subtitle_filechooser.set_filename(subtitle_filepath)
 
             return
@@ -663,10 +708,11 @@ class FilesChooserWindow(Window):
         :return:
         """
 
-        optional_subtitle_filechooser: _CustomFileChooser = self._filechoosers_list[_FileChooserButtonIndex.OPTIONAL_SUBTITLE]
         selected_index: int = dropdown.get_selected()
-        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
         selected_item: StringObject | None = cast(StringObject | None, dropdown.get_selected_item())
+
+        optional_subtitle_filechooser: _CustomFileChooser = self._filechoosers_list[_FileChooserButtonIndex.OPTIONAL_SUBTITLE]
+        video_filepath: Filepath  = self.get_filepath(_FileChooserButtonIndex.VIDEO)
 
         if selected_index != 0 and selected_item:
             selection: str = selected_item.get_string()
@@ -676,21 +722,29 @@ class FilesChooserWindow(Window):
             dropdown.set_sensitive(False)
             optional_subtitle_filechooser.set_sensitive(False)
 
-            subtitle_filepath: Filepath | None = write_subtitle_file(
+            subtitle_filepath: Filepath | None
+            process: Popen[bytes] | None
+
+            subtitle_filepath, process = write_subtitle_file(
                 video_filepath,
                 stream_index,
                 language,
                 codec_name
-            )
+            ) or (None, None)
 
             dropdown.set_sensitive(True)
-
 
             if not subtitle_filepath:
                 _print(f"Failed to write the subtitle file for the selected language.", True)
 
                 return
 
+            if not process:
+                _print(f"Failed to write the subtitle file for the selected language.", True)
+
+                return
+
+            self._threaded_subtitle_creation(process)
             optional_subtitle_filechooser.set_filename(subtitle_filepath)
 
             return

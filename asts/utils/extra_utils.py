@@ -12,6 +12,7 @@ from gi.repository.Pango import (
     AttrInt, AttrType, Style, Underline, Weight
 )
 
+from subprocess import Popen
 from ffmpeg     import probe
 from ffmpeg     import input as FFMPEGInput
 from ffmpeg     import Error as FFMPEGError
@@ -573,7 +574,12 @@ def get_available_encoded_languages(video_filepath: str) -> dict[str, dict[str, 
     return languages
 
 
-def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: str, codec_name: str) -> Filepath | None:
+def write_subtitle_file(
+    video_filepath: Filepath,
+    stream_index: str,
+    language: str,
+    codec_name: str
+) -> tuple[Filepath, Popen[bytes]] | tuple[()]:
     """
     write_subtitle_file
 
@@ -589,9 +595,10 @@ def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: s
     output_filepath: Filepath
     basename, _ = path.splitext(path.basename(video_filepath))
     output_filepath = path.join(CACHE_SUBTITLES_DIR, basename + "-" + language + "." + codec_name)
+    process: Popen[bytes] | None = None
 
     try:
-        FFMPEGInput(video_filepath).output(
+        process = FFMPEGInput(video_filepath).output(
             output_filepath,
             map=f"0:{stream_index}"
         ).global_args(
@@ -599,11 +606,11 @@ def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: s
             "-nostdin",
             "-loglevel",
             "quiet"
-        ).run()
+        ).run_async(pipe_stdout=False, pipe_stdin=False, pipe_stderr=False)
     except FFMPEGError as e:
         _print(f"Error running ffmpeg to write subtitle file: {e.stderr.decode()}", True)
 
-    return output_filepath if path.exists(output_filepath) else None
+    return (output_filepath, process) if process else ()
 
 
 __all__: list[str] = [

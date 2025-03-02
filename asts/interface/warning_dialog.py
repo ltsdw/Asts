@@ -11,7 +11,6 @@ from gi.repository.Gio import Icon
 
 from os import path
 
-from asts.custom_typing.aliases import Filepath
 from asts.custom_typing.globals import DISPLAY_WIDTH, DISPLAY_HEIGHT, ICONS_SYMBOLIC_DIRECTORY
 from asts.utils.extra_utils import set_widget_margin
 
@@ -20,7 +19,7 @@ class WarningDialog(Window):
     def __init__(
         self,
         parent: Window,
-        warning_message: str = "Warning went wrong."
+        warning_message: str = "Something went wrong"
     ) -> None:
         """
         WarningDialog
