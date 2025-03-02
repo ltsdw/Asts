@@ -679,18 +679,13 @@ class FilesChooserWindow(Window):
 
             dropdown.set_sensitive(True)
 
-            if not subtitle_filepath:
-                _print(f"Failed to write the subtitle file for the selected language.", True)
+            if process and subtitle_filepath:
+                self._threaded_subtitle_creation(process)
+                subtitle_filechooser.set_filename(subtitle_filepath)
 
                 return
 
-            if not process:
-                _print(f"Failed to write the subtitle file for the selected language.", True)
-
-                return
-
-            self._threaded_subtitle_creation(process)
-            subtitle_filechooser.set_filename(subtitle_filepath)
+            _print(f"Failed to write the subtitle file for the selected language.", True)
 
             return
 
@@ -734,18 +729,13 @@ class FilesChooserWindow(Window):
 
             dropdown.set_sensitive(True)
 
-            if not subtitle_filepath:
-                _print(f"Failed to write the subtitle file for the selected language.", True)
+            if process and subtitle_filepath:
+                self._threaded_subtitle_creation(process)
+                optional_subtitle_filechooser.set_filename(subtitle_filepath)
 
                 return
 
-            if not process:
-                _print(f"Failed to write the subtitle file for the selected language.", True)
-
-                return
-
-            self._threaded_subtitle_creation(process)
-            optional_subtitle_filechooser.set_filename(subtitle_filepath)
+            _print(f"Failed to write the subtitle file for the selected language.", True)
 
             return
 
