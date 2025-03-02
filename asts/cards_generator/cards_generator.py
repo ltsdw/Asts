@@ -22,7 +22,6 @@ from asts.custom_typing.dialogue_info import DialogueInfo, DialogueInfoIndex
 from asts.custom_typing.typed_list_store import TypedListStore
 from asts.custom_typing.cards_editor_states import CardsEditorState, CardsEditorStates
 from asts.custom_typing.pango_markup_to_html import PangoMarkupToHTML
-from asts.custom_typing.timestamp_field_info import TimestampFieldInfoIndex
 
 
 class CardsGenerator(Thread):
@@ -287,10 +286,10 @@ class CardsGenerator(Thread):
                 back_field=back_field_text
             )
             card_info[CardInfoIndex.START_TIMESTAMP] = (
-                dialogue_info_front[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].getTimestampObject()
+                dialogue_info_front[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].get_timestamp_object()
             )
             card_info[CardInfoIndex.END_TIMESTAMP] = (
-                dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].getTimestampObject()
+                dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].get_timestamp_object()
             )
 
             if dialogue_info_front[DialogueInfoIndex.HAS_VIDEO]:

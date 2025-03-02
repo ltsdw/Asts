@@ -1,13 +1,11 @@
 from enum import Enum
-from typing import cast, Literal, overload, TypeVar
+from typing import Literal, overload
 
 from asts.custom_typing.aliases import (
     OptionalVideoFilepath, OptionalAudioFilepath, OptionalImageFilepath
 )
 from asts.custom_typing.timestamp import Timestamp
 
-
-_TypeCardInfoIndex = TypeVar("_TypeCardInfoIndex", bound="CardInfoIndex")
 
 class CardInfoIndex(Enum):
     """
@@ -34,12 +32,12 @@ class CardInfoIndex(Enum):
         return (self.value == index.value)
 
 
-    def next(self: _TypeCardInfoIndex) -> _TypeCardInfoIndex:
+    def next(self: "CardInfoIndex") -> "CardInfoIndex":
         index: int = self.value + 1
 
         if index >= self.value: return self
 
-        return cast(_TypeCardInfoIndex, CardInfoIndex(index))
+        return CardInfoIndex(index)
 
 
 class CardInfo:

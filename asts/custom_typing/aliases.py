@@ -15,13 +15,14 @@ OptionalAudioFilepath   = OptionalFilename
 OptionalImageFilepath   = OptionalFilename
 OptionalVideoFilepath   = OptionalFilename
 SelectionBounds         = tuple[TextIter, TextIter] | tuple[()]
-SourceID                = int
+GlibSourceID            = int
+GObjectObjectHandlerID  = int
 StrTimestamp            = str
 
 
 __all__: list[str] = [
     "Command", "Filename", "Filepath", "OptionalFilename", "OptionalFilepath",
     "OptionalAudioFilepath", "OptionalImageFilepath", "OptionalVideoFilepath",
-    "SelectionBounds", "SourceID", "StrTimestamp"
+    "SelectionBounds", "GlibSourceID", "GObjectObjectHandlerID", "StrTimestamp"
 ]
 

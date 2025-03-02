@@ -7,16 +7,16 @@ require_version(*GOBJECT_VERSION)
 from gi.repository.Gtk import (
     Align, Application, Box, Button, ColorDialog, ColumnView,
     ColumnViewColumn, CustomFilter, FilterChange, FilterListModel,
-    Frame, Grid, INVALID_LIST_POSITION, Label, ListItem, ListScrollFlags,
+    Frame, Grid, INVALID_LIST_POSITION, ListItem, ListScrollFlags,
     Image, Orientation, ProgressBar, ScrolledWindow,
     SearchEntry, Separator, SignalListItemFactory,
     SingleSelection,  StyleContext, STYLE_PROVIDER_PRIORITY_APPLICATION,
-    TextBuffer, TextIter, TextTag, TextTagTable,
+    TextIter, TextTag, TextTagTable,
     TextView, Window, Widget
 )
 from gi.repository.Gdk      import RGBA as GdkRGBA
 from gi.repository.Gio      import Icon, AsyncResult
-from gi.repository.GLib     import idle_add, timeout_add, source_remove
+from gi.repository.GLib     import idle_add, timeout_add
 from gi.repository.Pango    import Style, Underline, Weight
 from gi.repository.GObject  import ParamSpec, BindingFlags
 
@@ -34,7 +34,7 @@ from asts.utils.extra_utils import (
     set_widget_margin, apply_tagged_text_to_text_buffer
 )
 from asts.custom_typing.aliases import (
-    Filepath, OptionalFilepath, SourceID, SelectionBounds, StrTimestamp
+    Filepath, OptionalFilepath, SelectionBounds, StrTimestamp
 )
 from asts.custom_typing.timestamp_field_info import TimestampFieldInfoIndex
 from asts.custom_typing.dialogue_info import DialogueInfo, DialogueInfoIndex
@@ -47,6 +47,8 @@ from asts.cards_generator.cards_generator import CardsGenerator
 from asts.interface.warning_dialog import WarningDialog
 from asts.custom_typing.entry_wrapper import EntryWrapper
 from asts.custom_typing.check_button_wrapper import CheckButtonWrapper
+from asts.custom_typing.label_wrapper import LabelWrapper
+from asts.custom_typing.text_buffer_wrapper import TextBufferWrapper
 
 
 class CardsEditor(Window):
@@ -86,10 +88,8 @@ class CardsEditor(Window):
         self._optional_subtitles_filepath: OptionalFilepath     = optional_subtitles_filepath
         self._deck_name: str                                    = deck_name
         self._number_medias_toggled: int = 0
-        self._front_field_text_buffer_handler_id: int
-        self._back_field_text_buffer_handler_id: int
-        self._front_field_text_buffer: TextBuffer
-        self._back_field_text_buffer: TextBuffer
+        self._front_field_text_buffer: TextBufferWrapper
+        self._back_field_text_buffer: TextBufferWrapper
         self._front_field_list_store: TypedListStore[DialogueInfo]
         self._back_field_list_store: TypedListStore[DialogueInfo]
         self._dialogues_columnview: ColumnView
@@ -367,7 +367,9 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        list_item.set_child(Label())
+        index_label: LabelWrapper = LabelWrapper()
+
+        list_item.set_child(index_label)
 
 
     def _factory_index_bind(
@@ -375,7 +377,7 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        index_label: Label = cast(Label, list_item.get_child())
+        index_label: LabelWrapper = cast(LabelWrapper, list_item.get_child())
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
@@ -388,7 +390,9 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        list_item.set_child(Label(use_markup=True))
+        dialogue_label: LabelWrapper = LabelWrapper(use_markup=True)
+
+        list_item.set_child(dialogue_label)
 
 
     def  _factory_dialogue_bind(
@@ -396,13 +400,23 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        dialogue_label: Label = cast(Label, list_item.get_child())
+        dialogue_label: LabelWrapper = cast(LabelWrapper, list_item.get_child())
         row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
 
         if not row: return
 
-        row.bind_property("dialogue", dialogue_label, "label", BindingFlags.SYNC_CREATE)
+        dialogue_label.block_interactions()
         dialogue_label.set_markup(row[DialogueInfoIndex.DIALOGUE])
+        dialogue_label.store_binding(
+            "label",
+            row.bind_property(
+                "dialogue",
+                dialogue_label,
+                "label",
+                BindingFlags.SYNC_CREATE
+            )
+        )
+        dialogue_label.unblock_interactions()
 
 
     def _handle_timestamp_field_changes(
@@ -419,8 +433,12 @@ class CardsEditor(Window):
 
         if not row: return False
 
+        entry.block_signal("notify::text")
+
         row[index][TimestampFieldInfoIndex.TIMESTAMP] = text
-        row[index][TimestampFieldInfoIndex.SOURCE_ID] = 0
+        row[index][TimestampFieldInfoIndex.GLIB_SOURCE_ID] = 0
+
+        entry.unblock_signal("notify::text")
 
         return False
 
@@ -439,12 +457,15 @@ class CardsEditor(Window):
 
         if not row: return
 
-        source_id: SourceID = row[index][TimestampFieldInfoIndex.SOURCE_ID]
-
-        if source_id:
-            source_remove(source_id)
-
-        row[index][TimestampFieldInfoIndex.SOURCE_ID] = timeout_add(1500, self._handle_timestamp_field_changes, entry, list_item, index)
+        row[index].add_glib_source_id(
+            timeout_add(
+                1500,
+                self._handle_timestamp_field_changes,
+                entry,
+                list_item,
+                index
+            )
+        )
 
 
     def _factory_start_timestamp_field_setup(
@@ -454,13 +475,16 @@ class CardsEditor(Window):
     ) -> None:
         start_timestamp_field_entry: EntryWrapper = EntryWrapper()
 
-        list_item.set_child(start_timestamp_field_entry)
-        start_timestamp_field_entry.connect(
+        start_timestamp_field_entry.store_gobject_object_handler_id(
             "notify::text",
-            self._on_entry_changed,
-            list_item,
-            DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO
+            start_timestamp_field_entry.connect(
+                "notify::text",
+                self._on_entry_changed,
+                list_item,
+                DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO
+            )
         )
+        list_item.set_child(start_timestamp_field_entry)
 
 
     def _factory_start_timestamp_field_bind(
@@ -473,28 +497,24 @@ class CardsEditor(Window):
 
         if not row: return
 
-        start_timestamp_field_entry.unbind()
+        start_timestamp_field_entry.block_interactions()
 
-        source_id: SourceID = row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
         timestamp: StrTimestamp = (
             row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO]
             [TimestampFieldInfoIndex.TIMESTAMP]
         )
 
-        if source_id: return
-
         start_timestamp_field_entry.set_text(timestamp)
-        start_timestamp_field_entry.bind
-        (
-            row.bind_property
-            (
-                "start_timestamp_field_info",
+        start_timestamp_field_entry.store_binding(
+            "text",
+            row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].bind_property(
+                "timestamp",
                 start_timestamp_field_entry,
                 "text",
-                BindingFlags.SYNC_CREATE,
-                lambda _, from_value: from_value.timestamp
+                BindingFlags.SYNC_CREATE
             )
         )
+        start_timestamp_field_entry.unblock_interactions()
 
 
     def _factory_end_timestamp_field_setup(
@@ -504,6 +524,15 @@ class CardsEditor(Window):
     ) -> None:
         end_timestamp_field_entry: EntryWrapper = EntryWrapper()
 
+        end_timestamp_field_entry.store_gobject_object_handler_id(
+            "notify::text",
+            end_timestamp_field_entry.connect(
+                "notify::text",
+                self._on_entry_changed,
+                list_item,
+                DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO
+            )
+        )
         list_item.set_child(end_timestamp_field_entry)
 
 
@@ -517,28 +546,24 @@ class CardsEditor(Window):
 
         if not row: return
 
-        end_timestamp_field_entry.unbind()
+        end_timestamp_field_entry.block_interactions()
 
-        source_id: SourceID = row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO][TimestampFieldInfoIndex.SOURCE_ID]
         timestamp: StrTimestamp = (
             row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO]
             [TimestampFieldInfoIndex.TIMESTAMP]
         )
 
-        if source_id: return
-
         end_timestamp_field_entry.set_text(timestamp)
-        end_timestamp_field_entry.bind
-        (
-            row.bind_property
-            (
-                "end_timestamp_field_info",
+        end_timestamp_field_entry.store_binding(
+            "text",
+            row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].bind_property(
+                "timestamp",
                 end_timestamp_field_entry,
                 "text",
-                BindingFlags.SYNC_CREATE,
-                lambda _, from_value: from_value.timestamp
+                BindingFlags.SYNC_CREATE
             )
         )
+        end_timestamp_field_entry.unblock_interactions()
 
 
     def _on_has_video_toggled(
@@ -612,44 +637,12 @@ class CardsEditor(Window):
         self._number_medias_toggled += 1
 
 
-    def _factory_has_video_setup(
-        self,
-        _: SignalListItemFactory,
-        list_item: ListItem
-    ) -> None:
-        video_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER, can_focus=False)
-
-        video_check_button.connect("toggled", self._on_has_video_toggled, list_item)
-        list_item.set_child(video_check_button)
-
-
-    def _factory_has_video_bind(
-        self,
-        _: SignalListItemFactory,
-        list_item: ListItem
-    ) -> None:
-        video_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
-        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
-
-        if not row: return
-
-        if video_check_button.binding:
-            video_check_button.binding.unbind()
-
-        video_check_button.set_active(row.has_video)
-
-        video_check_button.binding = row.bind_property(
-            "has_video", video_check_button, "active",
-            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
-        )
-
-
     def _factory_has_audio_setup(
         self,
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
+        audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER, can_focus=False)
 
         audios_check_button.connect("toggled", self._on_has_audio_toggled, list_item)
         list_item.set_child(audios_check_button)
@@ -666,15 +659,18 @@ class CardsEditor(Window):
 
         if not row: return
 
-        if audio_check_button.binding:
-            audio_check_button.binding.unbind()
-
+        audio_check_button.block_interactions()
         audio_check_button.set_active(row.has_audio)
-
-        audio_check_button.binding = row.bind_property(
-            "has_audio", audio_check_button, "active",
-            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
+        audio_check_button.store_binding(
+            "active",
+            row.bind_property(
+                "has_audio",
+                audio_check_button,
+                "active",
+                BindingFlags.SYNC_CREATE
+            )
         )
+        audio_check_button.unblock_interactions()
 
 
     def _factory_has_image_setup(
@@ -682,7 +678,7 @@ class CardsEditor(Window):
         _: SignalListItemFactory,
         list_item: ListItem
     ) -> None:
-        image_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
+        image_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER, can_focus=False)
 
         image_check_button.connect("toggled", self._on_has_image_toggled, list_item)
         list_item.set_child(image_check_button)
@@ -699,15 +695,60 @@ class CardsEditor(Window):
 
         if not row: return
 
-        if image_check_button.binding:
-            image_check_button.binding.unbind()
-
+        image_check_button.block_interactions()
         image_check_button.set_active(row.has_image)
-
-        image_check_button.binding = row.bind_property(
-            "has_image", image_check_button, "active",
-            BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE
+        image_check_button.store_binding(
+            "active",
+            row.bind_property(
+                "has_image",
+                image_check_button,
+                "active",
+                BindingFlags.SYNC_CREATE
+            )
         )
+        image_check_button.unblock_interactions()
+
+
+    def _factory_has_video_setup(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        video_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER, can_focus=False)
+
+        video_check_button.store_gobject_object_handler_id(
+            "toggled",
+            video_check_button.connect(
+                "toggled",
+                self._on_has_video_toggled,
+                list_item
+            )
+        )
+        list_item.set_child(video_check_button)
+
+
+    def _factory_has_video_bind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        video_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
+        row: DialogueInfo | None = cast(DialogueInfo | None, list_item.get_item())
+
+        if not row: return
+
+        video_check_button.block_interactions()
+        video_check_button.set_active(row.has_video)
+        video_check_button.store_binding(
+            "active",
+            row.bind_property(
+                "has_video",
+                video_check_button,
+                "active",
+                BindingFlags.SYNC_CREATE
+            )
+        )
+        video_check_button.unblock_interactions()
 
 
     def _setup_front_field(self, box: Box) -> None:
@@ -720,13 +761,17 @@ class CardsEditor(Window):
         :return:
         """
 
-        text_view: TextView = TextView(hexpand=True, vexpand=True)
-        self._front_field_text_buffer = text_view.get_buffer()
-        label: Label = Label(label="<i><b>Front:</b></i>", halign=Align.START, use_markup=True)
-        scrolled_window: ScrolledWindow = ScrolledWindow()
-        self._front_field_text_buffer_handler_id: int = self._front_field_text_buffer.connect(
+        self._front_field_text_buffer: TextBufferWrapper = TextBufferWrapper()
+        text_view: TextView = TextView(hexpand=True, vexpand=True, buffer=self._front_field_text_buffer)
+        label: LabelWrapper = LabelWrapper(label="<i><b>Front:</b></i>", halign=Align.START, use_markup=True)
+        scrolled_window: ScrolledWindow = ScrolledWindow(kinetic_scrolling=False)
+
+        self._front_field_text_buffer.store_gobject_object_handler_id(
             "changed",
-            self._on_front_field_text_buffer_changed
+            self._front_field_text_buffer.connect(
+                "changed",
+                self._on_front_field_text_buffer_changed
+            )
         )
 
         set_widget_margin(label, DISPLAY_WIDTH * 0.002)
@@ -744,7 +789,7 @@ class CardsEditor(Window):
         :return:
         """
 
-        self._front_field_text_buffer.handler_block(self._front_field_text_buffer_handler_id)
+        self._front_field_text_buffer.block_all_signals()
 
 
     def _enable_front_field_text_buffer_event_listening(self) -> None:
@@ -756,7 +801,7 @@ class CardsEditor(Window):
         :return:
         """
 
-        self._front_field_text_buffer.handler_unblock(self._front_field_text_buffer_handler_id)
+        self._front_field_text_buffer.unblock_all_signals()
 
 
     def _setup_back_field(self, box: Box) -> None:
@@ -769,15 +814,18 @@ class CardsEditor(Window):
         :return:
         """
 
-        text_view: TextView = TextView(hexpand=True, vexpand=True)
-        self._back_field_text_buffer = text_view.get_buffer()
-        label: Label = Label(label="<i><b>Back:</b></i>", halign=Align.START, use_markup=True)
-        scrolled_window: ScrolledWindow = ScrolledWindow()
-        self._back_field_text_buffer_handler_id = self._back_field_text_buffer.connect(
-            "changed",
-            self._on_back_field_text_buffer_changed
-        )
+        self._back_field_text_buffer = TextBufferWrapper()
+        text_view: TextView = TextView(hexpand=True, vexpand=True, buffer=self._back_field_text_buffer)
+        label: LabelWrapper = LabelWrapper(label="<i><b>Back:</b></i>", halign=Align.START, use_markup=True)
+        scrolled_window: ScrolledWindow = ScrolledWindow(kinetic_scrolling=False)
 
+        self._back_field_text_buffer.store_gobject_object_handler_id(
+            "changed",
+            self._back_field_text_buffer.connect(
+                "changed",
+                self._on_back_field_text_buffer_changed
+            )
+        )
         set_widget_margin(label, DISPLAY_WIDTH * 0.002)
         scrolled_window.set_child(text_view)
         box.append(label)
@@ -793,7 +841,7 @@ class CardsEditor(Window):
         :return:
         """
 
-        self._back_field_text_buffer.handler_block(self._back_field_text_buffer_handler_id)
+        self._back_field_text_buffer.block_all_signals()
 
 
     def _enable_back_field_text_buffer_event_listening(self) -> None:
@@ -805,10 +853,10 @@ class CardsEditor(Window):
         :return:
         """
 
-        self._back_field_text_buffer.handler_unblock(self._back_field_text_buffer_handler_id)
+        self._back_field_text_buffer.unblock_all_signals()
 
 
-    def _on_front_field_text_buffer_changed(self, text_buffer: TextBuffer) -> None:
+    def _on_front_field_text_buffer_changed(self, text_buffer: TextBufferWrapper) -> None:
         """
         _on_front_field_text_buffer_changed
 
@@ -825,7 +873,7 @@ class CardsEditor(Window):
         row[DialogueInfoIndex.DIALOGUE] = get_tagged_text_from_text_buffer(text_buffer)
 
 
-    def _on_back_field_text_buffer_changed(self, text_buffer: TextBuffer) -> None:
+    def _on_back_field_text_buffer_changed(self, text_buffer: TextBufferWrapper) -> None:
         """
         _on_back_field_text_buffer_changed
 
@@ -1404,7 +1452,7 @@ class CardsEditor(Window):
 
     def _remove_tags_from_selection(
         self,
-        text_buffer: TextBuffer,
+        text_buffer: TextBufferWrapper,
         selection_bounds: SelectionBounds,
         text_tag_table: TextTagTable,
         property_name: str
@@ -1448,9 +1496,9 @@ class CardsEditor(Window):
         videos_frame: Frame = Frame(child=videos_box)
         audios_frame: Frame = Frame(child=audios_box)
         images_frame: Frame = Frame(child=images_box)
-        videos_label: Label = Label(label="Videos", halign=Align.CENTER)
-        audios_label: Label = Label(label="Audios", halign=Align.CENTER)
-        images_label: Label = Label(label="Images", halign=Align.CENTER)
+        videos_label: LabelWrapper = LabelWrapper(label="Videos", halign=Align.CENTER)
+        audios_label: LabelWrapper = LabelWrapper(label="Audios", halign=Align.CENTER)
+        images_label: LabelWrapper = LabelWrapper(label="Images", halign=Align.CENTER)
         all_videos_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
         all_audios_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)
         all_images_check_button: CheckButtonWrapper = CheckButtonWrapper(halign=Align.CENTER)

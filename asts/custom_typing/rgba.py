@@ -4,12 +4,8 @@ from gi import require_version
 require_version(*GDK_VERSION)
 from gi.repository.Gdk import RGBA as GdkRGBA
 
-from typing import TypeVar
-
 from asts.utils.core_utils import clamp
 
-
-_TypeRGBA = TypeVar("_TypeRGBA", bound="RGBA")
 
 class RGBA(GdkRGBA):
     def __init__(
@@ -77,7 +73,7 @@ class RGBA(GdkRGBA):
 
 
     @classmethod
-    def create_from(cls: type[_TypeRGBA], other_rgba: GdkRGBA) -> _TypeRGBA:
+    def create_from(cls: type["RGBA"], other_rgba: GdkRGBA) -> "RGBA":
         """
         create_from
 

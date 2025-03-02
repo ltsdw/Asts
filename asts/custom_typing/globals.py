@@ -37,6 +37,7 @@ DISPLAY_HEIGHT: int = __get_primary_monitor_height()
 APPLICATION_ROOT_DIRECTORY: str = path.dirname(path.abspath(argv[0]))
 CACHE_DIR: str = path.join(APPLICATION_ROOT_DIRECTORY, "cache")
 CACHE_MEDIA_DIR: str = path.join(CACHE_DIR, "media")
+CACHE_SUBTITLES_DIR: str = path.join(CACHE_DIR, "subtitles")
 RECENTLY_USED_FILEPATH: str = path.join(CACHE_DIR, "recently_used")
 ICONS_SYMBOLIC_DIRECTORY: str = path.join(
     APPLICATION_ROOT_DIRECTORY,

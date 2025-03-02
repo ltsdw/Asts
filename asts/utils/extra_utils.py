@@ -29,7 +29,7 @@ from asts.custom_typing.aliases import (
     OptionalVideoFilepath, OptionalImageFilepath,
     OptionalAudioFilepath, OptionalFilename, StrTimestamp
 )
-from asts.custom_typing.globals import CACHE_MEDIA_DIR, RECENTLY_USED_FILEPATH
+from asts.custom_typing.globals import CACHE_MEDIA_DIR, CACHE_SUBTITLES_DIR, RECENTLY_USED_FILEPATH
 from asts.custom_typing.format_tags import FormatTags
 from asts.custom_typing.dialogue_info import DialogueInfo
 from asts.custom_typing.card_info import CardInfo, CardInfoIndex
@@ -459,6 +459,7 @@ def create_cache_dir() -> None:
     """
 
     makedirs(CACHE_MEDIA_DIR, exist_ok=True)
+    makedirs(CACHE_SUBTITLES_DIR, exist_ok=True)
 
 
 def cache_recently_used_files(
@@ -493,12 +494,12 @@ def cache_recently_used_files(
     else:
         data += f"video_filepath = \"\"\n"
 
-    if not path.commonpath([CACHE_MEDIA_DIR, sub_filepath]) == CACHE_MEDIA_DIR:
+    if not path.commonpath([CACHE_SUBTITLES_DIR, sub_filepath]) == CACHE_SUBTITLES_DIR:
         data += f"subtitles_filepath = \"{sub_filepath}\"\n"
     else:
         data += f"subtitles_filepath = \"\"\n"
 
-    if optional_sub_filepath and not path.commonpath([CACHE_MEDIA_DIR, optional_sub_filepath]) == CACHE_MEDIA_DIR:
+    if optional_sub_filepath and not path.commonpath([CACHE_SUBTITLES_DIR, optional_sub_filepath]) == CACHE_SUBTITLES_DIR:
         data += f"optional_subtitles_filepath = \"{optional_sub_filepath}\"\n" \
             if optional_sub_filepath \
             else "optional_subtitles_filepath = \"\"\n"
@@ -587,7 +588,7 @@ def write_subtitle_file(video_filepath: Filepath, stream_index: str, language: s
 
     output_filepath: Filepath
     basename, _ = path.splitext(path.basename(video_filepath))
-    output_filepath = path.join(CACHE_MEDIA_DIR, basename + "-" + language + "." + codec_name)
+    output_filepath = path.join(CACHE_SUBTITLES_DIR, basename + "-" + language + "." + codec_name)
 
     try:
         FFMPEGInput(video_filepath).output(

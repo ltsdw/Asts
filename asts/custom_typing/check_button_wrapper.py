@@ -8,10 +8,11 @@ from gi.repository.Gtk import CheckButton
 
 from typing import Any
 
-from asts.custom_typing.base_widget_binding_wrapper import BaseWidgetBindingWrapper
+from asts.custom_typing.aliases import GObjectObjectHandlerID
+from asts.custom_typing.base_gobject_object_wrapper import BaseGObjectObjectWrapper
 
 
-class CheckButtonWrapper(CheckButton, BaseWidgetBindingWrapper):
+class CheckButtonWrapper(CheckButton, BaseGObjectObjectWrapper):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """
         Wrapper class around Gtk.CheckButton to keep track of Gtk.CheckButton bindings.
@@ -21,10 +22,11 @@ class CheckButtonWrapper(CheckButton, BaseWidgetBindingWrapper):
         :return:
         """
 
-        binding: Binding | None = kwargs.pop("binding", None)
+        bindings: dict[str, Binding] = kwargs.pop("bindings", {})
+        gobject_object_handlers_id: dict[str, GObjectObjectHandlerID] = kwargs.pop("gobject_object_handlers_id", {})
 
         CheckButton.__init__(self, *args, **kwargs)
-        BaseWidgetBindingWrapper.__init__(self, binding)
+        BaseGObjectObjectWrapper.__init__(self, self, bindings, gobject_object_handlers_id)
 
 
 __all__: list[str] = ["CheckButtonWrapper"]
