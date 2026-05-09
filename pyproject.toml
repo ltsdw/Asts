@@ -1,0 +1,24 @@
+[project]
+name = "asts"
+version = "0.1.0"
+description = "Asts (Another subs to srs) is a simple tool used to create Anki cards inspired by subs2srs."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "anki>=25.9.4",
+    "beautifulsoup4>=4.14.3",
+    "ffmpeg-python>=0.2.0",
+    "gobject>=0.1.0",
+    "pyasstosrt>=1.5.0",
+    "pygobject>=3.56.3",
+    "pysrt>=1.1.2",
+]
+
+[dependency-groups]
+dev = [
+    "pygobject-stubs>=2.17.0",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
