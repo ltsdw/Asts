@@ -1,4 +1,4 @@
-#! venv/bin/python3
+#! /usr/bin/env python
 
 from asts.interface.asts import Asts
 from asts.utils.extra_utils import remove_cached_media_files, die
