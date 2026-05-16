@@ -135,3 +135,5 @@ coc-settings.json
 # Pyre type checker
 .pyre/
 
+# Asts' cache
+cache/

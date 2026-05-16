@@ -23,6 +23,7 @@ from pyasstosrt import Subtitle, Dialogue
 from os         import makedirs, path, remove
 from tomllib    import load
 from typing     import Any
+from hashlib    import md5
 
 from asts.utils.core_utils import NEW_LINE, die, handle_exception_if_any, _print
 from asts.custom_typing.aliases import (
@@ -38,6 +39,7 @@ from asts.custom_typing.rgba import RGBA
 from asts.custom_typing.text_buffer_pango_markup_parser import TextBufferPangoMarkupParser
 from asts.custom_typing.cards_editor_states import CardsEditorState, CardsEditorStates
 from asts.custom_typing.timestamp_field_info import TimestampFieldInfo
+from asts.custom_typing.timestamp import Timestamp
 
 
 def is_file_collection(filename: OptionalFilename = None) -> bool:
@@ -108,13 +110,138 @@ def remove_cached_media_files() -> None:
         pass
 
 
-def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: CardsEditorState) -> None:
+def create_video_from_video(
+    input_file: Filepath,
+    start_timestamp: StrTimestamp,
+    end_timestamp: StrTimestamp,
+    output_filepath: Filepath
+    ) -> None:
     """
-    cut_video
+    create_video_from_video
 
-    Cut the video making a short clip, audio or image.
+    Creates a video clip from a source video file.
 
-    :param input_file: Path of the video to be used.
+    Extracts the specified time range from the input video,
+    scales the output video to a width of 640 pixels while
+    preserving the aspect ratio, and saves it to the
+    output filepath.
+
+    :param input_file: Path to the source video file.
+    :param start_timestamp: Start timestamp of the clip.
+    :param end_timestamp: End timestamp of the clip.
+    :param output_filepath: Path where the output video will be saved.
+    :return:
+    """
+
+    try:
+        FFMPEGInput(
+            input_file,
+            ss=start_timestamp,
+            to=end_timestamp
+        ).output(
+            output_filepath,
+            vf="scale=640:-1",
+        ).global_args(
+            "-y",
+            "-nostdin",
+            "-loglevel",
+            "quiet"
+        ).run()
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
+
+
+def create_audio_from_video(
+    input_file: Filepath,
+    start_timestamp: StrTimestamp,
+    end_timestamp: StrTimestamp,
+    output_filepath: Filepath
+    ) -> None:
+    """
+    create_audio_from_video
+
+    Extracts an audio clip from a source video file.
+
+    Extracts the specified time range from the input video,
+    removes the video stream, encodes the audio at 320 kbps,
+    and saves it to the output filepath.
+
+    :param input_file: Path to the source video file.
+    :param start_timestamp: Start timestamp of the audio clip.
+    :param end_timestamp: End timestamp of the audio clip.
+    :param output_filepath: Path where the output audio will be saved.
+    :return:
+    """
+
+    try:
+        FFMPEGInput(
+            input_file,
+            ss=start_timestamp,
+            to=end_timestamp
+        ).output(
+            output_filepath,
+            vn=None,
+            b="320k"
+        ).global_args(
+            "-y",
+            "-nostdin",
+            "-loglevel",
+            "quiet"
+        ).run()
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
+
+
+def create_image_from_video(
+    input_file: Filepath,
+    start_timestamp: StrTimestamp,
+    end_timestamp: StrTimestamp,
+    output_filepath: Filepath
+    ) -> None:
+    """
+    create_image_from_video
+
+    Creates an image frame from a source video file.
+
+    Extracts a single frame from the specified time range,
+    scales the image to a width of 640 pixels while
+    preserving the aspect ratio, and saves it to the
+    output filepath.
+
+    :param input_file: Path to the source video file.
+    :param start_timestamp: Start timestamp used for frame extraction.
+    :param end_timestamp: End timestamp used for frame extraction.
+    :param output_filepath: Path where the output image will be saved.
+    :return:
+    """
+
+    try:
+        FFMPEGInput(
+            input_file,
+            ss=start_timestamp,
+            to=end_timestamp,
+        ).output(
+            output_filepath,
+            vsync=0,
+            vframes=1,
+            filter_complex="scale=640:-1"
+        ).global_args(
+            "-y",
+            "-nostdin",
+            "-loglevel",
+            "quiet"
+        ).run()
+    except FFMPEGError as e:
+        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
+
+
+def create_media_from_cardinfo(input_file: Filepath, card_info: CardInfo, cards_editor_state: CardsEditorState) -> None:
+    """
+    create_media_from_cardinfo
+
+    Cut the video making a shorter clip, audio or image depending on the metada of CardInfo.
+
+    :param input_file: Path to the source video file.
     :param list_media_info: A list with info about how the final media will be.
     :param cards_editor_state: State object that keeps the track of CardsEditor's class state.
     :return:
@@ -128,54 +255,14 @@ def cut_video(input_file: Filepath, card_info: CardInfo, cards_editor_state: Car
     audio_filepath: OptionalAudioFilepath   = card_info[CardInfoIndex.AUDIO_FILEPATH]
     image_filepath: OptionalImageFilepath   = card_info[CardInfoIndex.IMAGE_FILEPATH]
 
-    try:
-        if video_filepath:
-            FFMPEGInput(
-                input_file,
-                ss=start_timestamp,
-                to=end_timestamp
-            ).output(
-                video_filepath,
-                vf="scale=640:-1",
-            ).global_args(
-                "-y",
-                "-nostdin",
-                "-loglevel",
-                "quiet"
-            ).run()
-        if audio_filepath:
-            FFMPEGInput(
-                input_file,
-                ss=start_timestamp,
-                to=end_timestamp
-            ).output(
-                audio_filepath,
-                vn=None,
-                b="320k"
-            ).global_args(
-                "-y",
-                "-nostdin",
-                "-loglevel",
-                "quiet"
-            ).run()
-        if image_filepath:
-            FFMPEGInput(
-                input_file,
-                ss=start_timestamp,
-                to=end_timestamp,
-            ).output(
-                image_filepath,
-                vsync=0,
-                vframes=1,
-                filter_complex="scale=640:-1"
-            ).global_args(
-                "-y",
-                "-nostdin",
-                "-loglevel",
-                "quiet"
-            ).run()
-    except FFMPEGError as e:
-        _print(f"Error running ffmpeg probe: {e.stderr.decode()}", True)
+    if video_filepath:
+        create_video_from_video(input_file, start_timestamp, end_timestamp, video_filepath)
+
+    if audio_filepath:
+        create_audio_from_video(input_file, start_timestamp, end_timestamp, audio_filepath)
+
+    if image_filepath:
+        create_image_from_video(input_file, start_timestamp, end_timestamp, image_filepath)
 
 
 def is_ass_file(sub_filepath: OptionalFilepath = None) -> bool:
@@ -613,12 +700,41 @@ def write_subtitle_file(
     return (output_filepath, process) if process else ()
 
 
+def hash_dialogue_metadata(
+    input_file: Filepath,
+    dialogue_uuid: str,
+    start_timestamp: Timestamp,
+    end_timestamp: Timestamp) -> str:
+    """
+    hash_dialogue_metadata
+
+    Generates a unique MD5 hash from dialogue metadata.
+
+    The hash is created using the input file path, dialogue UUID,
+    start timestamp, and end timestamp combined into a single string.
+
+    :param input_file: Input media filepath.
+    :param dialogue_uuid: Unique dialogue identifier.
+    :param start_timestamp: Dialogue start timestamp.
+    :param end_timestamp: Dialogue end timestamp.
+    :return: MD5 hexadecimal hash string generated from the metadata.
+    """
+
+    return md5(
+        f"{input_file}:"
+        f"{dialogue_uuid}:"
+        f"{start_timestamp}:"
+        f"{end_timestamp}".encode('utf-8')
+    ).hexdigest()
+
+
 __all__: list[str] = [
-    "remove_cached_media_files", "create_cache_dir", "cut_video", "extract_all_dialogues",
-    "get_tagged_text_from_text_buffer", "apply_pango_markup_to_text_buffer",
+    "remove_cached_media_files", "create_cache_dir", "create_media_from_cardinfo",
+    "create_video_from_video", "create_audio_from_video", "create_image_from_video",
+    "extract_all_dialogues", "get_tagged_text_from_text_buffer", "apply_pango_markup_to_text_buffer",
     "apply_tagged_text_to_text_buffer", "is_file_collection",
     "is_file_subtitles", "is_file_video", "cache_recently_used_files",
     "set_widget_margin", "handle_exception_if_any", "get_recently_used_files",
-    "get_available_encoded_languages", "write_subtitle_file"
+    "get_available_encoded_languages", "write_subtitle_file", "hash_dialogue_metadata"
 ]
 

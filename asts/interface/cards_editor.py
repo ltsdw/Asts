@@ -25,13 +25,13 @@ from typing             import cast, Literal, Iterator
 from os                 import path
 
 from asts.custom_typing.globals import (
-    DISPLAY_HEIGHT, DISPLAY_WIDTH,
-    ICONS_SYMBOLIC_DIRECTORY
+    AUDIO_FORMAT, CACHE_MEDIA_DIR, DISPLAY_HEIGHT,
+    DISPLAY_WIDTH, ICONS_SYMBOLIC_DIRECTORY
 )
 from asts.utils.core_utils import is_timestamp_within, handle_exception_if_any, NEW_LINE
 from asts.utils.extra_utils import (
-    extract_all_dialogues, get_tagged_text_from_text_buffer,
-    set_widget_margin, apply_tagged_text_to_text_buffer
+    create_audio_from_video, extract_all_dialogues, get_tagged_text_from_text_buffer,
+    set_widget_margin, apply_tagged_text_to_text_buffer, hash_dialogue_metadata
 )
 from asts.custom_typing.aliases import (
     Filepath, OptionalFilepath, SelectionBounds, StrTimestamp
@@ -49,6 +49,7 @@ from asts.custom_typing.entry_wrapper import EntryWrapper
 from asts.custom_typing.check_button_wrapper import CheckButtonWrapper
 from asts.custom_typing.label_wrapper import LabelWrapper
 from asts.custom_typing.text_buffer_wrapper import TextBufferWrapper
+from asts.audio_player.audio_player import AudioPlayer
 
 
 class CardsEditor(Window):
@@ -96,10 +97,12 @@ class CardsEditor(Window):
         self._selected_row: SingleSelection
         self._row_selection: RowSelection
         self._search_entry: SearchEntry
+        self._play_stop_button: Button
         self._progress_bar: ProgressBar
         self._cancel_button: Button
         self._generate_button: Button
         self._cards_editor_state: CardsEditorState = CardsEditorState()
+        self._audio_player: AudioPlayer
         self._futures_list: list[Future[None]] = []
 
         self.set_resizable(False)
@@ -128,6 +131,7 @@ class CardsEditor(Window):
         toolbar_frame: Frame = Frame(child=toolbar_box, halign=Align.END)
         fields_frame: Frame = Frame(child=fields_box)
         self._row_selection = RowSelection(index=0)
+        self._audio_player = AudioPlayer()
 
         DialogueInfo.reset()
         self._populate_list_store()
@@ -144,6 +148,8 @@ class CardsEditor(Window):
         self._force_emit_selection_changed(position=0, n_items=1)
         self._main_box.append(fields_frame)
         self._setup_select_all_medias_check_buttons()
+        self._audio_player.connect("started", self._on_player_started)
+        self._audio_player.connect("stopped", self._on_player_stopped)
 
 
     def show_all(self) -> None:
@@ -984,22 +990,165 @@ class CardsEditor(Window):
         separator_2: Separator = Separator()
         separator_3: Separator = Separator()
         separator_4: Separator = Separator()
+        separator_5: Separator = Separator()
 
         margin: float = DISPLAY_WIDTH * 0.002
         set_widget_margin(separator_1, start=margin, end=margin)
         set_widget_margin(separator_2, start=margin, end=margin)
         set_widget_margin(separator_3, start=margin, end=margin)
         set_widget_margin(separator_4, start=margin, end=margin)
+        set_widget_margin(separator_5, start=margin, end=margin)
 
-        self._setup_toolbar_color_button(toolbar_box)
+        self._setup_play_stop_button(toolbar_box)
         toolbar_box.append(separator_1)
-        self._setup_toolbar_underline_button(toolbar_box)
+        self._setup_toolbar_color_button(toolbar_box)
         toolbar_box.append(separator_2)
-        self._setup_toolbar_bold_button(toolbar_box)
+        self._setup_toolbar_underline_button(toolbar_box)
         toolbar_box.append(separator_3)
-        self._setup_toolbar_italic_button(toolbar_box)
+        self._setup_toolbar_bold_button(toolbar_box)
         toolbar_box.append(separator_4)
+        self._setup_toolbar_italic_button(toolbar_box)
+        toolbar_box.append(separator_5)
         self._setup_toolbar_remove_all_tags_button(toolbar_box)
+
+
+    def _set_player_play_button(self) -> None:
+        """
+        _set_player_play_button
+
+        Configures the player button to display the play icon.
+
+        Sets the button tooltip to indicate that clicking it
+        will start playback of the current dialogue audio,
+        and updates the button child widget with the symbolic
+        play icon.
+
+        :return:
+        """
+
+        play_gicon: Icon = Icon.new_for_string(
+            path.join(ICONS_SYMBOLIC_DIRECTORY,
+            "play-symbolic.svg")
+        )
+        play_image: Image = Image.new_from_gicon(play_gicon)
+
+        self._play_stop_button.set_tooltip_text("Play the current dialogue audio")
+        self._play_stop_button.set_child(play_image)
+
+
+    def _set_player_stop_button(self) -> None:
+        """
+        _set_player_stop_button
+
+        Configures the player button to display the stop icon.
+
+        Sets the button tooltip to indicate that clicking it
+        will stop playback of the current dialogue audio,
+        and updates the button child widget with the symbolic
+        stop icon.
+
+        :return:
+        """
+
+        stop_gicon: Icon = Icon.new_for_string(
+            path.join(ICONS_SYMBOLIC_DIRECTORY,
+            "stop-symbolic.svg")
+        )
+        stop_image: Image = Image.new_from_gicon(stop_gicon)
+
+        self._play_stop_button.set_tooltip_text("Stop the current dialogue audio")
+        self._play_stop_button.set_child(stop_image)
+
+
+    def _setup_play_stop_button(self, toolbar_box: Box) -> None:
+        """
+        _setup_toolbar_play_stop_button
+
+        Setup the toolbar play/stop button.
+
+        :param toolbar_box: Box container to arrenge the buttons.
+        :return:
+        """
+
+        self._play_stop_button: Button = Button()
+
+        self._set_player_play_button()
+        self._play_stop_button.connect("clicked", self._on_play_stop_button_clicked)
+        toolbar_box.append(self._play_stop_button)
+
+
+    def _on_player_started(self, _: AudioPlayer) -> None:
+        """
+        _on_player_started
+
+        Handles the audio player started signal.
+
+        Updates the player button to display the stop icon
+        while audio playback is active.
+
+        :param _: The audio player instance that emitted the signal.
+        :return:
+        """
+
+        self._set_player_stop_button()
+
+
+    def _on_player_stopped(self, _: AudioPlayer) -> None:
+        """
+        _on_player_stopped
+
+        Handles the audio player stopped signal.
+
+        Updates the player button to display the play icon
+        when audio playback has stopped.
+
+        :param _: The audio player instance that emitted the signal.
+        :return:
+        """
+
+        self._set_player_play_button()
+
+
+    def _on_play_stop_button_clicked(self, _: Button) -> None:
+        """
+        _on_play_stop_button_clicked
+
+        Handles the clicked event for the play/stop button.
+
+        :param play_stop_button: Button that emitted the event.
+        :return:
+        """
+
+        row: DialogueInfo | None = cast(DialogueInfo | None, self._selected_row.get_selected_item())
+
+        if not row: return
+
+        self._play_stop_button.set_sensitive(False)
+
+        if self._audio_player.is_playing():
+            self._audio_player.stop()
+        elif self._audio_player.is_stopped():
+            audio_hash: str = hash_dialogue_metadata(
+                self._video_filepath,
+                row[DialogueInfoIndex.DIALOGUE_UUID],
+                row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].timestamp,
+                row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].timestamp
+            )
+
+            audio_filepath: Filepath = path.join(
+                CACHE_MEDIA_DIR,
+                f"{audio_hash}{AUDIO_FORMAT}"
+            )
+
+            create_audio_from_video(
+                self._video_filepath,
+                row[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].timestamp,
+                row[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].timestamp,
+                audio_filepath)
+
+            self._audio_player.play(audio_filepath)
+
+        self._play_stop_button.set_sensitive(True)
 
 
     def _setup_toolbar_color_button(self, toolbar_box: Box) -> None:
