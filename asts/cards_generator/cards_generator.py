@@ -12,7 +12,7 @@ from asts.custom_typing.globals import (
     CACHE_MEDIA_DIR, VIDEO_FORMAT, AUDIO_FORMAT, IMAGE_FORMAT
 )
 from asts.utils.core_utils import _print, get_chunked, NEW_LINE
-from asts.utils.extra_utils import cut_video, remove_cached_media_files
+from asts.utils.extra_utils import create_media_from_cardinfo, hash_dialogue_metadata, remove_cached_media_files
 from asts.custom_typing.aliases  import (
     OptionalFilename, Filepath, OptionalVideoFilepath,
     OptionalAudioFilepath, OptionalImageFilepath,
@@ -184,9 +184,9 @@ class CardsGenerator(Thread):
             self._deck.addNote(note)
 
 
-    def _cut_medias(self, executor: ThreadPoolExecutor) -> None:
+    def _create_medias(self, executor: ThreadPoolExecutor) -> None:
         """
-        _cut_medias
+        _create_medias
 
         Cut the clip selected to be used at the creation of cards.
 
@@ -197,7 +197,7 @@ class CardsGenerator(Thread):
         for card_info_list in self._chunks_card_info_list:
             for card_info in card_info_list:
                 future: Future[None] = executor.submit(
-                    cut_video,
+                    create_media_from_cardinfo,
                     self._video_filepath,
                     card_info,
                     self._cards_editor_state
@@ -291,23 +291,29 @@ class CardsGenerator(Thread):
             card_info[CardInfoIndex.END_TIMESTAMP] = (
                 dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].get_timestamp_object()
             )
+            file_hash: str = hash_dialogue_metadata(
+                self._video_filepath,
+                dialogue_info_front[DialogueInfoIndex.DIALOGUE_UUID],
+                dialogue_info_front[DialogueInfoIndex.START_TIMESTAMP_FIELD_INFO].timestamp,
+                dialogue_info_front[DialogueInfoIndex.END_TIMESTAMP_FIELD_INFO].timestamp
+            )
 
             if dialogue_info_front[DialogueInfoIndex.HAS_VIDEO]:
                 card_info[CardInfoIndex.VIDEO_FILEPATH] = path.join(
                     CACHE_MEDIA_DIR,
-                    f"{dialogue_info_front[DialogueInfoIndex.DIALOGUE_UUID]}{VIDEO_FORMAT}"
+                    f"{file_hash}{VIDEO_FORMAT}"
                 )
 
             if dialogue_info_front[DialogueInfoIndex.HAS_AUDIO]:
                 card_info[CardInfoIndex.AUDIO_FILEPATH] = path.join(
                     CACHE_MEDIA_DIR,
-                    f"{dialogue_info_front[DialogueInfoIndex.DIALOGUE_UUID]}{AUDIO_FORMAT}"
+                    f"{file_hash}{AUDIO_FORMAT}"
                 )
 
             if dialogue_info_front[DialogueInfoIndex.HAS_IMAGE]:
                 card_info[CardInfoIndex.IMAGE_FILEPATH] = path.join(
                     CACHE_MEDIA_DIR,
-                    f"{dialogue_info_front[DialogueInfoIndex.DIALOGUE_UUID]}{IMAGE_FORMAT}"
+                    f"{file_hash}{IMAGE_FORMAT}"
                 )
 
             yield card_info
@@ -385,20 +391,6 @@ class CardsGenerator(Thread):
         self._idle_add_update_progress_bar(self._number_completed_tasks, self._total_number_tasks)
 
 
-    #def _db_error_dialog(self) -> None:
-    #    """
-    #    _db_error_dialog
-
-    #    Display a dialog indicating the Anki database is opened.
-
-    #    :return:
-    #    """
-
-    #    idle_add(self._handler.resetProgressbar)
-
-    #    idle_add(AnkiDialog(self._handler).showAll)
-
-
     def get_futures_list(self) -> list[Future[None]]:
         """
         get_futures_list
@@ -437,7 +429,7 @@ class CardsGenerator(Thread):
             # This can raise Anki's DBError exception,
             # let the higher class using this handle it
             with ThreadPoolExecutor(max_workers=self._max_workers) as executor:
-                self._cut_medias(executor)
+                self._create_medias(executor)
                 self._prepare_cards(executor, wait_for_cut_medias_completion_event)
                 wait(self._cut_medias_future)
 

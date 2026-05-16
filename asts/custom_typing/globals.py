@@ -2,6 +2,7 @@
 GTK_VERSION:    tuple[str, str] = ("Gtk",       "4.0")
 GDK_VERSION:    tuple[str, str] = ("Gdk",       "4.0")
 PANGO_VERSION:  tuple[str, str] = ("Pango",     "1.0")
+GST_VERSION:    tuple[str, str] = ("Gst",       "1.0")
 GIO_VERSION:    tuple[str, str] = ("Gio",       "2.0")
 GOBJECT_VERSION:tuple[str, str] = ("GObject",   "2.0")
 GLIB_VERSION:   tuple[str, str] = ("GLib",      "2.0")
