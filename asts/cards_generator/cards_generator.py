@@ -1,7 +1,7 @@
 from anki.collection import Collection
-from anki.decks import DeckId
+from anki.decks import DeckId, DeckDict
 from anki.notes import Note
-from anki.models import NotetypeDict
+from anki.models import NotetypeDict, NotetypeId
 
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from os                 import path
@@ -76,6 +76,7 @@ class CardsGenerator(Thread):
 
     def _create_card(
         self,
+        model: NotetypeDict,
         text_front: str,
         text_back: str,
         video_filepath: OptionalVideoFilepath,
@@ -87,6 +88,7 @@ class CardsGenerator(Thread):
 
         Create a new anki card.
 
+        :param model: The note type used to tell card's format, fields, deck id, etc.
         :param text_front: Optional text to the front field of the card.
         :param text_back: Optional text to the back field of the card.
         :param video_filepath: Optional filename to a video media file.
@@ -94,17 +96,23 @@ class CardsGenerator(Thread):
         :param image_filepath: Optional filename to an image media file.
         :return:
         """
-        note: Note = self._deck.newNote()
+
+        note: Note = self._deck.new_note(model)
         note_type: NotetypeDict | None = note.note_type()
 
         # In what situation this returns None?
         if not note_type:
-            _print("Failed to fetch note type for card. Card wasn't created.")
+            _print(f"Failed to fetch note type for card. Card wasn't created.{NEW_LINE}", error = True)
             return
 
-        card_fields: list[dict[str, str]]   = note_type["flds"]
-        card_front: str                     = card_fields[0]["name"]
-        card_back: str                      = card_fields[1]["name"]
+        try:
+            card_fields: list[dict[str, str]]   = note_type["flds"]
+            card_front: str                     = card_fields[0]["name"]
+            card_back: str                      = card_fields[1]["name"]
+        except Exception as e:
+            _print(f"Failed to get the card's front/back fields.{NEW_LINE}"
+                   f"Exception: {e}{NEW_LINE}", error = True)
+            return
 
         text_front = text_front.replace("\n", "<br>")
         text_back = text_back.replace("\n", "<br>")
@@ -127,6 +135,8 @@ class CardsGenerator(Thread):
 
     def _write_card(
         self,
+        deck_id: DeckId,
+        model: NotetypeDict,
         card: CardInfo,
         wait_for_cut_medias_completion_event: Event
     ) -> None:
@@ -136,7 +146,9 @@ class CardsGenerator(Thread):
         Creates and writes a new card to the anki.collection.
         Can raise exception StopAsyncIteration in case of cancelling tasks.
 
-        :param tuple_sentence: A CardInfo object with data related to a specific card.
+        :param deck_id: The id of the deck where the card will be saved.
+        :param model: The note type used to tell card's format, fields, deck id, etc.
+        :param card: A CardInfo object with data related to a specific card.
         :param wait_for_cut_medias_completion_event: Event for waiting on all medias completion.
         :return:
         """
@@ -169,6 +181,7 @@ class CardsGenerator(Thread):
                 image_filepath = self._deck.media.add_file(image)
 
             note: Note | None = self._create_card(
+                model,
                 front_field,
                 back_field,
                 video_filepath,
@@ -181,7 +194,7 @@ class CardsGenerator(Thread):
 
                 return
 
-            self._deck.addNote(note)
+            self._deck.add_note(note, deck_id)
 
 
     def _create_medias(self, executor: ThreadPoolExecutor) -> None:
@@ -222,29 +235,38 @@ class CardsGenerator(Thread):
         """
 
         deck_id: DeckId | None = self._deck.decks.id(self._deck_name)
+        model: NotetypeDict | None = None
 
         # This should never happen
         if not deck_id:
             _print(f"Failed to get deck id for name: {self._deck_name}{NEW_LINE}", True)
             return
 
-        self._deck.decks.select(deck_id)
-        card_type: str = self._deck.models.current()["name"]
-        model: NotetypeDict | None = self._deck.models.by_name(card_type)
+        # This will most likely break someday, until then, let's use it!
+        # https://github.com/ankitects/anki/blob/main/rslib/src/config/deck.rs#L43
+        last_note_type_id: NotetypeId | None = self._deck.get_config(f"_deck_{deck_id}_lastNotetype")
+
+        if last_note_type_id:
+            model = self._deck.models.get(last_note_type_id)
+        else:
+            model = self._deck.models.current()
 
         # This should never happen
         if not model:
-            _print(f"Failed to get model for card type: {card_type}{NEW_LINE}", True)
+            _print(f"Failed to get model.{NEW_LINE}", True)
             return
 
         model["did"] = deck_id
 
-        self._deck.models.save(model)
-        self._deck.models.set_current(model)
-
         for card_info_list in self._chunks_card_info_list:
             for card in card_info_list:
-                future: Future[None] = executor.submit(self._write_card, card, wait_for_cut_medias_completion_event)
+                future: Future[None] = executor.submit(
+                    self._write_card,
+                    deck_id,
+                    model,
+                    card,
+                    wait_for_cut_medias_completion_event
+                )
 
                 self._prepare_cards_future.append(future)
                 self._futures_list.append(future)
