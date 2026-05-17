@@ -55,6 +55,7 @@ It can be installed from the official site [uv installation](https://docs.astral
 - Select and edit the cards that you want add:
     - Before adding cards certify that your anki is **closed**, it's **not possible** to add new cards while anki still open.
     - It's possible edit both sides (front and back) before adding a card.
+      
       Note: Asts will try to use the last note type used in the chosen deck.
       If the deck is new, the default note type (which most likely is the `Basic` note type) will be used.
     - While editing the timestamp fields the format MUST be HH:MM:SS.sss, eg. `00:13:04.123` is a valid input format `00:13:04` is not.
