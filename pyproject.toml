@@ -1,6 +1,6 @@
 [project]
-name = "asts"
-version = "0.1.0"
+name = "Asts"
+version = "1.0.0"
 description = "Asts (Another subs to srs) is a simple tool used to create Anki cards inspired by subs2srs."
 readme = "README.md"
 requires-python = ">=3.10"
