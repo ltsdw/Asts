@@ -347,18 +347,25 @@ class CardsEditor(Window):
         column_dialogue.set_fixed_width(int(DISPLAY_WIDTH * 0.5))
         factory_index.connect("setup", self._factory_index_setup)
         factory_index.connect("bind", self._factory_index_bind)
+        factory_index.connect("unbind", self._factory_index_unbind)
         factory_dialogue.connect("setup", self._factory_dialogue_setup)
         factory_dialogue.connect("bind", self._factory_dialogue_bind)
+        factory_dialogue.connect("unbind", self._factory_dialogue_unbind)
         factory_start_time.connect("setup", self._factory_start_timestamp_field_setup)
         factory_start_time.connect("bind", self._factory_start_timestamp_field_bind)
+        factory_start_time.connect("unbind", self._factory_start_timestamp_field_unbind)
         factory_end_time.connect("setup", self._factory_end_timestamp_field_setup)
         factory_end_time.connect("bind", self._factory_end_timestamp_field_bind)
+        factory_end_time.connect("unbind", self._factory_end_timestamp_field_unbind)
         factory_has_video.connect("setup", self._factory_has_video_setup)
         factory_has_video.connect("bind", self._factory_has_video_bind)
+        factory_has_video.connect("unbind", self._factory_has_video_unbind)
         factory_has_audio.connect("setup", self._factory_has_audio_setup)
         factory_has_audio.connect("bind", self._factory_has_audio_bind)
+        factory_has_audio.connect("unbind", self._factory_has_audio_unbind)
         factory_has_image.connect("setup", self._factory_has_image_setup)
         factory_has_image.connect("bind", self._factory_has_image_bind)
+        factory_has_image.connect("unbind", self._factory_has_image_unbind)
         self._dialogues_columnview.append_column(column_index)
         self._dialogues_columnview.append_column(column_dialogue)
         self._dialogues_columnview.append_column(column_start_time)
@@ -366,7 +373,6 @@ class CardsEditor(Window):
         self._dialogues_columnview.append_column(column_has_video)
         self._dialogues_columnview.append_column(column_has_audio)
         self._dialogues_columnview.append_column(column_has_image)
-
 
     def _factory_index_setup(
         self,
@@ -389,6 +395,10 @@ class CardsEditor(Window):
         if not row: return
 
         index_label.set_label(row[DialogueInfoIndex.DIALOGUE_INDEX])
+
+
+    def _factory_index_unbind(self, _: SignalListItemFactory, __: ListItem) -> None:
+        return
 
 
     def _factory_dialogue_setup(
@@ -423,6 +433,16 @@ class CardsEditor(Window):
             )
         )
         dialogue_label.unblock_interactions()
+
+
+    def _factory_dialogue_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        dialogue_label: LabelWrapper = cast(LabelWrapper, list_item.get_child())
+
+        dialogue_label.remove_binding("label")
 
 
     def _handle_timestamp_field_changes(
@@ -523,6 +543,16 @@ class CardsEditor(Window):
         start_timestamp_field_entry.unblock_interactions()
 
 
+    def _factory_start_timestamp_field_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        start_timestamp_field_entry: EntryWrapper = cast(EntryWrapper, list_item.get_child())
+
+        start_timestamp_field_entry.remove_binding("text")
+
+
     def _factory_end_timestamp_field_setup(
         self,
         _: SignalListItemFactory,
@@ -570,6 +600,16 @@ class CardsEditor(Window):
             )
         )
         end_timestamp_field_entry.unblock_interactions()
+
+
+    def _factory_end_timestamp_field_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        end_timestamp_field_entry: EntryWrapper = cast(EntryWrapper, list_item.get_child())
+
+        end_timestamp_field_entry.remove_binding("text")
 
 
     def _on_has_video_toggled(
@@ -679,6 +719,16 @@ class CardsEditor(Window):
         audio_check_button.unblock_interactions()
 
 
+    def _factory_has_audio_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        audio_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
+
+        audio_check_button.remove_binding("active")
+
+
     def _factory_has_image_setup(
         self,
         _: SignalListItemFactory,
@@ -713,6 +763,16 @@ class CardsEditor(Window):
             )
         )
         image_check_button.unblock_interactions()
+
+
+    def _factory_has_image_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        image_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
+
+        image_check_button.remove_binding("active")
 
 
     def _factory_has_video_setup(
@@ -755,6 +815,17 @@ class CardsEditor(Window):
             )
         )
         video_check_button.unblock_interactions()
+
+
+    def _factory_has_video_unbind(
+        self,
+        _: SignalListItemFactory,
+        list_item: ListItem
+    ) -> None:
+        video_check_button: CheckButtonWrapper = cast(CheckButtonWrapper, list_item.get_child())
+
+        video_check_button.remove_binding("active")
+
 
 
     def _setup_front_field(self, box: Box) -> None:

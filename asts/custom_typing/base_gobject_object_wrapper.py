@@ -60,7 +60,8 @@ class BaseGObjectObjectWrapper:
 
         bind: Binding | None = self._bindings.pop(source_property, None)
 
-        if bind: bind.unbind()
+        if bind:
+            bind.unbind()
 
 
     def remove_all_bindings(self) -> None:
